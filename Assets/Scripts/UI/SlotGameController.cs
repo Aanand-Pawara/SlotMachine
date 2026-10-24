@@ -40,7 +40,9 @@ public sealed class SlotGameController : MonoBehaviour
     private void Awake()
     {
         RemoveInvalidReels();
-        lever.Activated += SpinOnLever;
+
+        if (lever != null)
+            lever.Activated += SpinOnLever;
     }
 
     private void OnDisable()

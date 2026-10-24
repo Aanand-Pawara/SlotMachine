@@ -25,6 +25,9 @@ public sealed class Lever : MonoBehaviour
     // Called when the lever is pulled and the action is allowed.
     public event Action<Lever> Activated;
 
+    // Called when the player clicks the lever so the game can open a bet popup.
+    public event Action<Lever, Vector2> ActivationRequested;
+
     // Called after the lever animation finishes.
     public event Action<Lever> AnimationCompleted;
 
@@ -103,7 +106,10 @@ public sealed class Lever : MonoBehaviour
 
     private void HandlePointerClick(UnityEngine.EventSystems.PointerEventData eventData)
     {
-        TryActivate();
+        if (eventData == null)
+            return;
+
+        ActivationRequested?.Invoke(this, eventData.position);
     }
 
     // Plays the press animation and then returns to idle.
