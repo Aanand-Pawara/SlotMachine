@@ -1,127 +1,162 @@
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace SlotMachine.UI
 {
     public sealed class BettingPopupController : MonoBehaviour
     {
-        [Header("Popup")]
+        private sealed class OptionBinding
+        {
+            public UIPointerHandler Handler;
+            public Action<UnityEngine.EventSystems.PointerEventData> Callback;
+        }
+
         [SerializeField] private RectTransform popupRoot;
         [SerializeField] private CanvasGroup popupGroup;
         [SerializeField] private TMP_Text titleText;
-        [SerializeField] private Button optionButtonPrefab;
         [SerializeField] private Transform optionContainer;
-        [SerializeField] private int[] betOptions = { 10, 25, 50, 100 };
 
-        [Header("Animation")]
-        [SerializeField] private float openDuration = 0.18f;
-
+        private readonly List<OptionBinding> optionBindings = new();
         private Action<int> selectionCallback;
-        private Canvas parentCanvas;
+        private string currencySymbol;
+        private Camera uiCamera;
 
         private void Awake()
         {
             if (popupRoot == null)
-                popupRoot = GetComponent<RectTransform>();
+                popupRoot = (RectTransform)transform;
 
             if (popupGroup == null)
                 popupGroup = GetComponent<CanvasGroup>();
 
-            if (parentCanvas == null)
-                parentCanvas = GetComponentInParent<Canvas>();
-
-            if (popupRoot != null)
-                popupRoot.gameObject.SetActive(false);
+            if (popupGroup == null)
+                popupGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
-        public void Open(Vector2 screenPosition, Action<int> onSelection)
+        public void Open(
+            Vector2 screenPosition,
+            RectTransform parentCanvas,
+            Camera cameraForCanvas,
+            IReadOnlyList<int> bets,
+            GameObject betOptionPrefab,
+            string currency,
+            Action<int> onSelection)
         {
-            selectionCallback = onSelection;
-            RefreshButtons();
-
-            if (popupRoot == null)
+            if (parentCanvas == null || bets == null || betOptionPrefab == null || optionContainer == null)
+            {
+                Debug.LogError("Bet popup needs a canvas, bet options, option prefab, and option container.", this);
                 return;
+            }
+
+            uiCamera = cameraForCanvas;
+            currencySymbol = currency;
+            selectionCallback = onSelection;
+            gameObject.SetActive(true);
+            if (titleText != null)
+                titleText.text = "Choose your bet";
+            BuildOptions(bets, betOptionPrefab);
 
             popupRoot.gameObject.SetActive(true);
-
-            Vector2 localPosition;
-            if (parentCanvas != null)
-            {
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    (RectTransform)popupRoot.parent,
-                    screenPosition,
-                    parentCanvas.worldCamera,
-                    out var point);
-                localPosition = point + new Vector2(0f, 100f);
-            }
-            else
-            {
-                localPosition = new Vector2(0f, 100f);
-            }
-
-            popupRoot.anchoredPosition = localPosition;
-            StartCoroutine(AnimateOpen());
+            PositionAt(screenPosition);
+            PlayOpenAnimation();
         }
 
         public void Close()
         {
-            if (popupRoot == null)
-                return;
-
-            popupRoot.gameObject.SetActive(false);
             selectionCallback = null;
+            UnsubscribeOptions();
+
+            gameObject.SetActive(false);
         }
 
-        private void RefreshButtons()
+        private void BuildOptions(IReadOnlyList<int> bets, GameObject betOptionPrefab)
         {
-            if (optionButtonPrefab == null || optionContainer == null)
-                return;
+            UnsubscribeOptions();
 
             for (int i = optionContainer.childCount - 1; i >= 0; i--)
-            {
                 Destroy(optionContainer.GetChild(i).gameObject);
-            }
 
-            for (int i = 0; i < betOptions.Length; i++)
+            for (int i = 0; i < bets.Count; i++)
             {
-                var button = Instantiate(optionButtonPrefab, optionContainer);
-                var text = button.GetComponentInChildren<TMP_Text>();
-                if (text != null)
-                    text.text = $"${betOptions[i]}";
+                int bet = bets[i];
+                GameObject option = Instantiate(betOptionPrefab, optionContainer, false);
+                TMP_Text label = option.GetComponentInChildren<TMP_Text>();
+                UIPointerHandler pointer = option.GetComponentInChildren<UIPointerHandler>();
 
-                int optionValue = betOptions[i];
-                button.onClick.RemoveAllListeners();
-                button.onClick.AddListener(() =>
+                if (label == null || pointer == null)
                 {
-                    selectionCallback?.Invoke(optionValue);
-                    Close();
-                });
+                    Debug.LogError("Each bet option prefab needs a TMP text and UIPointerHandler.", option);
+                    Destroy(option);
+                    continue;
+                }
+
+                label.text = $"{currencySymbol}{bet}";
+                Action<UnityEngine.EventSystems.PointerEventData> callback = _ => SelectBet(bet);
+                pointer.Clicked += callback;
+                optionBindings.Add(new OptionBinding { Handler = pointer, Callback = callback });
             }
         }
 
-        private IEnumerator AnimateOpen()
+        private void PositionAt(Vector2 screenPosition)
         {
-            if (popupGroup == null)
-                yield break;
-
-            popupGroup.alpha = 0f;
-            popupRoot.localScale = Vector3.one * 0.75f;
-
-            float elapsed = 0f;
-            while (elapsed < openDuration)
+            RectTransform parent = (RectTransform)popupRoot.parent;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    parent, screenPosition, uiCamera, out Vector2 localPosition))
             {
-                float t = Mathf.Clamp01(elapsed / openDuration);
-                popupGroup.alpha = Mathf.Lerp(0f, 1f, Mathf.SmoothStep(0f, 1f, t));
-                popupRoot.localScale = Vector3.Lerp(Vector3.one * 0.75f, Vector3.one, Mathf.SmoothStep(0f, 1f, t));
+                localPosition = Vector2.zero;
+            }
+
+            Vector2 halfSize = popupRoot.rect.size * 0.5f;
+            Rect bounds = parent.rect;
+            localPosition.x = Mathf.Clamp(localPosition.x, bounds.xMin + halfSize.x, bounds.xMax - halfSize.x);
+            localPosition.y = Mathf.Clamp(localPosition.y, bounds.yMin + halfSize.y, bounds.yMax - halfSize.y);
+            popupRoot.anchoredPosition = localPosition;
+        }
+
+        private void PlayOpenAnimation()
+        {
+            popupGroup.alpha = 0f;
+            popupRoot.localScale = Vector3.one * 0.82f;
+            StopAllCoroutines();
+            StartCoroutine(AnimateOpen());
+        }
+
+        private System.Collections.IEnumerator AnimateOpen()
+        {
+            const float duration = 0.18f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
+                popupGroup.alpha = t;
+                popupRoot.localScale = Vector3.Lerp(Vector3.one * 0.82f, Vector3.one, t);
                 elapsed += Time.unscaledDeltaTime;
                 yield return null;
             }
 
             popupGroup.alpha = 1f;
             popupRoot.localScale = Vector3.one;
+        }
+
+        private void SelectBet(int amount)
+        {
+            Action<int> callback = selectionCallback;
+            Close();
+            callback?.Invoke(amount);
+        }
+
+        private void UnsubscribeOptions()
+        {
+            foreach (OptionBinding binding in optionBindings)
+            {
+                if (binding.Handler != null)
+                    binding.Handler.Clicked -= binding.Callback;
+            }
+
+            optionBindings.Clear();
         }
     }
 }

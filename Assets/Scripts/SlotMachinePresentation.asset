@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61a6b6fa08e29e74e83287763c9c2421, type: 3}
+  m_Name: SlotMachinePresentation
+  m_EditorClassIdentifier: Assembly-CSharp::SlotMachinePresentationConfig
+  bettingPopupPrefab: {fileID: 6700172757024622311, guid: 7751b5b6ac2c2944b93e7d0a3d8173b1, type: 3}
+  notificationPrefab: {fileID: 0}
+  betOptionPrefab: {fileID: 8812720122636627062, guid: 3f239b8f275ee514a888f9a26333d963, type: 3}
+  leverPull: {fileID: 8300000, guid: cbb379439c459c94fbc4c309ef830841, type: 3}
+  reelSpin: {fileID: 0}
+  reelStop: {fileID: 0}
+  buttonClick: {fileID: 0}
+  win: {fileID: 0}
+  jackpot: {fileID: 0}
+  currencySymbol: $
+  winColor: {r: 0.3, g: 1, b: 0.5, a: 1}
+  lossColor: {r: 1, g: 0.35, b: 0.35, a: 1}
+  messageColor: {r: 0.9, g: 0.75, b: 0.3, a: 1}
+  notificationDuration: 1.4

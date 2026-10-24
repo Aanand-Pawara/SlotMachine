@@ -3,8 +3,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// This file stores the main settings for the slot machine.
-// Think of it as the blueprint for the whole game: symbols, reels, sound, and betting rules.
+// This file stores the gameplay settings for the slot machine.
+// Sound and UI assets are kept in SlotMachinePresentationConfig.
 // The values here are saved in a ScriptableObject, so we can edit them in the Unity Editor.
 [CreateAssetMenu(fileName = "SlotMachineConfig", menuName = "Slot Machine/Configuration")]
 public sealed class SlotMachineConfig : ScriptableObject
@@ -37,36 +37,6 @@ public sealed class SlotMachineConfig : ScriptableObject
         public int PayoutMultiplier => payoutMultiplier;
     }
 
-    // All sound clips used by the slot machine.
-    [Serializable]
-    public sealed class AudioSettings
-    {
-        [SerializeField] private AudioClip leverPull;
-        [SerializeField] private AudioClip reelSpin;
-        [SerializeField] private AudioClip reelStop;
-        [SerializeField] private AudioClip buttonClick;
-        [SerializeField] private AudioClip win;
-        [SerializeField] private AudioClip jackpot;
-
-        // Sound when the player pulls the lever.
-        public AudioClip LeverPull => leverPull;
-
-        // Sound while the reel is spinning.
-        public AudioClip ReelSpin => reelSpin;
-
-        // Sound when a reel stops.
-        public AudioClip ReelStop => reelStop;
-
-        // Sound for button taps or UI clicks.
-        public AudioClip ButtonClick => buttonClick;
-
-        // Sound for a normal win.
-        public AudioClip Win => win;
-
-        // Sound for a big win or jackpot.
-        public AudioClip Jackpot => jackpot;
-    }
-
     // Setup for each reel in the machine.
     // This controls how the reels move and look.
     [Serializable]
@@ -81,6 +51,7 @@ public sealed class SlotMachineConfig : ScriptableObject
         [SerializeField, Min(0f)] private float cruiseDuration = 0.8f;
         [SerializeField, Min(0f)] private float decelerationDuration = 0.55f;
         [SerializeField, Min(0f)] private float stopStaggerDelay = 0.2f;
+        [SerializeField, Min(1)] private int extraStopCycles = 2;
 
         // Number of reels in the machine.
         public int ReelCount => reelCount;
@@ -108,6 +79,7 @@ public sealed class SlotMachineConfig : ScriptableObject
 
         // Delay between each reel stop, so the reels do not stop at the exact same time.
         public float StopStaggerDelay => stopStaggerDelay;
+        public int ExtraStopCycles => extraStopCycles;
 
         // Total number of symbol slots needed for a reel.
         public int PoolSize => visibleRows + bufferRows * 2;
@@ -138,9 +110,6 @@ public sealed class SlotMachineConfig : ScriptableObject
     [Header("Symbols")]
     [SerializeField] private List<SymbolDefinition> symbols = new();
 
-    [Header("Audio")]
-    [SerializeField] private AudioSettings audio = new();
-
     [Header("Reels")]
     [SerializeField] private ReelSettings reels = new();
 
@@ -149,9 +118,6 @@ public sealed class SlotMachineConfig : ScriptableObject
 
     // All symbols available in the machine.
     public IReadOnlyList<SymbolDefinition> Symbols => symbols;
-
-    // Sound settings for the machine.
-    public AudioSettings Audio => audio;
 
     // Reel movement settings.
     public ReelSettings Reels => reels;

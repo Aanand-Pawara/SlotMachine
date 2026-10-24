@@ -7,89 +7,79 @@ namespace SlotMachine.UI
 {
     public sealed class FloatingNotificationController : MonoBehaviour
     {
-        [SerializeField] private GameObject toastPrefab;
-        [SerializeField] private RectTransform container;
-        [SerializeField] private float displayDuration = 1.4f;
+        [SerializeField] private TMP_Text messageText;
+        [SerializeField] private Image background;
+        [SerializeField] private CanvasGroup canvasGroup;
 
-        private Canvas parentCanvas;
+        private RectTransform rectTransform;
 
         private void Awake()
         {
-            if (container == null)
-                container = GetComponent<RectTransform>();
+            rectTransform = GetComponent<RectTransform>();
 
-            if (parentCanvas == null)
-                parentCanvas = GetComponentInParent<Canvas>();
-        }
+            if (messageText == null)
+                messageText = GetComponentInChildren<TMP_Text>();
 
-        public void Show(string message, Color color, Vector2 screenPosition)
-        {
-            if (toastPrefab == null)
-                return;
-
-            if (parentCanvas == null)
-                parentCanvas = GetComponentInParent<Canvas>();
-
-            GameObject toast = Instantiate(toastPrefab, container, false);
-            var rect = toast.GetComponent<RectTransform>();
-            var text = toast.GetComponentInChildren<TMP_Text>();
-            var background = toast.GetComponentInChildren<Image>();
-            var canvasGroup = toast.GetComponent<CanvasGroup>();
-
-            if (text != null)
-                text.text = message;
-
-            if (background != null)
-                background.color = new Color(color.r, color.g, color.b, 0.75f);
+            if (background == null)
+                background = GetComponentInChildren<Image>();
 
             if (canvasGroup == null)
-                canvasGroup = toast.AddComponent<CanvasGroup>();
+                canvasGroup = GetComponent<CanvasGroup>();
 
-            Vector2 anchoredPosition;
-            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    container,
-                    screenPosition,
-                    parentCanvas != null ? parentCanvas.worldCamera : null,
-                    out var localPosition))
-            {
-                anchoredPosition = localPosition;
-            }
-            else
-            {
-                anchoredPosition = Vector2.zero;
-            }
-
-            rect.anchoredPosition = anchoredPosition + new Vector2(0f, 50f);
-            StartCoroutine(AnimateToast(rect, canvasGroup, text, color));
+            if (canvasGroup == null)
+                canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
-        private IEnumerator AnimateToast(RectTransform rect, CanvasGroup canvasGroup, TMP_Text text, Color color)
+        public void Show(
+            string message,
+            Color color,
+            RectTransform canvasRect,
+            Camera uiCamera,
+            Vector2 screenPosition,
+            float duration)
         {
-            float elapsed = 0f;
-            Vector3 startScale = Vector3.one * 0.7f;
-            Vector3 targetScale = Vector3.one;
-            Vector3 startPos = rect.anchoredPosition;
-            Vector3 endPos = rect.anchoredPosition + new Vector2(0f, 40f);
-
-            while (elapsed < displayDuration)
+            if (messageText == null || rectTransform == null || canvasRect == null)
             {
-                float t = Mathf.Clamp01(elapsed / displayDuration);
+                Debug.LogError("Notification prefab needs a RectTransform, TMP text, and canvas.", this);
+                Destroy(gameObject);
+                return;
+            }
 
-                rect.anchoredPosition = Vector2.Lerp(startPos, endPos, t);
-                rect.localScale = Vector3.Lerp(startScale, targetScale, Mathf.SmoothStep(0f, 1f, t));
+            messageText.text = message;
+            if (background != null)
+                background.color = new Color(color.r, color.g, color.b, 0.82f);
 
-                if (canvasGroup != null)
-                    canvasGroup.alpha = 1f - Mathf.Clamp01(t * 1.2f);
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    canvasRect, screenPosition, uiCamera, out Vector2 localPosition))
+            {
+                localPosition = Vector2.zero;
+            }
 
-                if (text != null)
-                    text.color = new Color(color.r, color.g, color.b, 1f - Mathf.Clamp01(t * 1.1f));
+            rectTransform.anchoredPosition = localPosition + new Vector2(0f, 40f);
+            rectTransform.localScale = Vector3.one * 0.75f;
+            canvasGroup.alpha = 0f;
+            StartCoroutine(Animate(duration, color));
+        }
 
+        private IEnumerator Animate(float duration, Color color)
+        {
+            Vector2 startPosition = rectTransform.anchoredPosition;
+            Vector2 endPosition = startPosition + new Vector2(0f, 45f);
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                float t = Mathf.Clamp01(elapsed / duration);
+                float eased = Mathf.SmoothStep(0f, 1f, t);
+                rectTransform.anchoredPosition = Vector2.Lerp(startPosition, endPosition, eased);
+                rectTransform.localScale = Vector3.Lerp(Vector3.one * 0.75f, Vector3.one, eased);
+                canvasGroup.alpha = t < 0.75f ? 1f : 1f - Mathf.InverseLerp(0.75f, 1f, t);
+                messageText.color = new Color(color.r, color.g, color.b, canvasGroup.alpha);
                 elapsed += Time.unscaledDeltaTime;
                 yield return null;
             }
 
-            if (rect != null)
-                Destroy(rect.gameObject);
+            Destroy(gameObject);
         }
     }
 }

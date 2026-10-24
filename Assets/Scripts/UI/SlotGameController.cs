@@ -16,9 +16,6 @@ public sealed class SlotGameController : MonoBehaviour
     [Header("Reels")]
     [SerializeField] private List<SlotReel> reels = new();
 
-    [Header("Spin Settings")]
-    [SerializeField, Min(0f)] private float stopStaggerOverride = -1f;
-
     [Header("Lever")]
     [SerializeField] private Lever lever;
 
@@ -31,6 +28,9 @@ public sealed class SlotGameController : MonoBehaviour
     // Fired with the symbol result chosen for the spin.
     public event Action<IReadOnlyList<SlotMachineConfig.SymbolDefinition>> ResultsGenerated;
 
+    // Fired when the player clicks the lever and needs to choose a bet.
+    public event Action<Vector2> BetRequested;
+
     public bool IsSpinning { get; private set; }
     public IReadOnlyList<SlotReel> Reels => reels;
     public SlotMachineConfig Config => config;
@@ -40,13 +40,20 @@ public sealed class SlotGameController : MonoBehaviour
     private void Awake()
     {
         RemoveInvalidReels();
+        ConfigureReels();
+    }
 
+    private void OnEnable()
+    {
         if (lever != null)
-            lever.Activated += SpinOnLever;
+            lever.ActivationRequested += HandleLeverRequest;
     }
 
     private void OnDisable()
     {
+        if (lever != null)
+            lever.ActivationRequested -= HandleLeverRequest;
+
         if (spinRoutine != null)
         {
             StopCoroutine(spinRoutine);
@@ -56,9 +63,10 @@ public sealed class SlotGameController : MonoBehaviour
         IsSpinning = false;
     }
 
-    private void SpinOnLever(Lever lever)
+    private void HandleLeverRequest(Lever requestedLever, Vector2 screenPosition)
     {
-        TrySpin();
+        if (!IsSpinning)
+            BetRequested?.Invoke(screenPosition);
     }
 
     // Try to start a spin.
@@ -82,6 +90,9 @@ public sealed class SlotGameController : MonoBehaviour
         List<SlotMachineConfig.SymbolDefinition> results = GenerateResults();
 
         if (results.Count != reels.Count)
+            return false;
+
+        if (lever != null && !lever.TryActivate())
             return false;
 
         IsSpinning = true;
@@ -109,7 +120,11 @@ public sealed class SlotGameController : MonoBehaviour
         foreach (SlotReel reel in newReels)
         {
             if (reel != null && !reels.Contains(reel))
+            {
                 reels.Add(reel);
+                if (config != null)
+                    reel.SetConfig(config);
+            }
         }
     }
 
@@ -117,9 +132,7 @@ public sealed class SlotGameController : MonoBehaviour
     private IEnumerator SpinAllReels(
         IReadOnlyList<SlotMachineConfig.SymbolDefinition> results)
     {
-        float stagger = stopStaggerOverride >= 0f
-            ? stopStaggerOverride
-            : config.Reels.StopStaggerDelay;
+        float stagger = config.Reels.StopStaggerDelay;
 
         int startedCount = 0;
 
@@ -258,6 +271,18 @@ public sealed class SlotGameController : MonoBehaviour
         }
 
         return true;
+    }
+
+    private void ConfigureReels()
+    {
+        if (config == null)
+            return;
+
+        foreach (SlotReel reel in reels)
+        {
+            if (reel != null)
+                reel.SetConfig(config);
+        }
     }
 
     // Removes broken or duplicate reel references.

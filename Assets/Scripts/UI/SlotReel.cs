@@ -12,28 +12,9 @@ using UnityEngine.UI;
 [RequireComponent(typeof(RectTransform), typeof(RectMask2D))]
 public sealed class SlotReel : MonoBehaviour
 {
-    private enum ReelState
-    {
-        Idle,
-        Accelerating,
-        Cruising,
-        Decelerating
-    }
-
-    [Header("Configuration")]
-    [SerializeField] private SlotMachineConfig config;
-    [SerializeField, Min(1)] private int extraBufferRows = 2;
-
     [Header("Appearance")]
     [SerializeField] private Sprite fallbackSprite;
     [SerializeField] private bool preserveAspect = true;
-
-    [Header("Animation")]
-    [SerializeField, Min(1f)] private float minimumCruiseSpeed = 1800f;
-    [SerializeField, Min(0.01f)] private float accelerationDuration = 0.25f;
-    [SerializeField, Min(0f)] private float minimumCruiseDuration = 0.8f;
-    [SerializeField, Min(0.01f)] private float decelerationDuration = 0.55f;
-    [SerializeField, Min(1)] private int extraStopCycles = 2;
 
     // Fired when this reel starts spinning.
     public event Action<SlotReel> SpinStarted;
@@ -48,9 +29,9 @@ public sealed class SlotReel : MonoBehaviour
     private RectTransform viewport;
     private readonly List<Image> symbolViews = new();
 
-    private ReelState state = ReelState.Idle;
     private Coroutine spinRoutine;
     private bool initialized;
+    private SlotMachineConfig config;
     private float symbolHeight;
     private float scrollOffset;
     private float currentSpeed;
@@ -60,22 +41,6 @@ public sealed class SlotReel : MonoBehaviour
     private void Awake()
     {
         viewport = GetComponent<RectTransform>();
-
-        if (config == null)
-        {
-            Debug.LogError($"[{nameof(SlotReel)}] Assign a SlotMachineConfig on '{name}'.", this);
-            enabled = false;
-            return;
-        }
-
-        if (!config.HasValidSymbols)
-        {
-            Debug.LogError($"[{nameof(SlotReel)}] Configuration contains no valid symbols.", this);
-            enabled = false;
-            return;
-        }
-
-        InitializePool();
     }
 
     private void OnDisable()
@@ -83,7 +48,6 @@ public sealed class SlotReel : MonoBehaviour
         StopSpinRoutine();
         IsSpinning = false;
         currentSpeed = 0f;
-        state = ReelState.Idle;
     }
 
     private void OnDestroy()
@@ -124,7 +88,6 @@ public sealed class SlotReel : MonoBehaviour
         scrollOffset = 0f;
         ApplyPositions();
         ShowCenterSymbol(CurrentResult);
-        state = ReelState.Idle;
         SpinCompleted?.Invoke(this, CurrentResult);
     }
 
@@ -137,35 +100,20 @@ public sealed class SlotReel : MonoBehaviour
             return;
         }
 
-        if (newConfig == null || !newConfig.HasValidSymbols)
+        if (newConfig == null || !newConfig.HasValidSymbols || newConfig.Reels == null)
         {
             Debug.LogError("Cannot assign an invalid SlotMachineConfig.", this);
             return;
         }
+
+        if (viewport == null)
+            viewport = GetComponent<RectTransform>();
 
         config = newConfig;
         RebuildPool();
     }
 
     // Creates the list of symbol images used by this reel.
-    private void InitializePool()
-    {
-        if (config == null)
-            return;
-
-        visibleRows = config.Reels.VisibleRows;
-        symbolHeight = config.Reels.SymbolHeight;
-
-        if (symbolHeight <= 0f || visibleRows <= 0)
-        {
-            Debug.LogError("Symbol height and visible row count must be positive.", this);
-            enabled = false;
-            return;
-        }
-
-        RebuildPool();
-    }
-
     // Clears old images and builds a fresh symbol pool.
     private void RebuildPool()
     {
@@ -198,7 +146,7 @@ public sealed class SlotReel : MonoBehaviour
             visibleRows,
             Mathf.CeilToInt(viewportHeight / symbolHeight));
 
-        poolSize = requiredVisibleRows + extraBufferRows * 2;
+        poolSize = requiredVisibleRows + config.Reels.BufferRows * 2;
 
         if (poolSize % 2 == 0)
             poolSize++;
@@ -231,33 +179,30 @@ public sealed class SlotReel : MonoBehaviour
     private IEnumerator SpinRoutine(SlotMachineConfig.SymbolDefinition target)
     {
         IsSpinning = true;
-        state = ReelState.Accelerating;
         currentSpeed = 0f;
         SpinStarted?.Invoke(this);
 
         float elapsed = 0f;
 
-        while (elapsed < accelerationDuration)
+        while (elapsed < config.Reels.AccelerationDuration)
         {
             elapsed += GetDeltaTime();
-            float t = Mathf.Clamp01(elapsed / accelerationDuration);
-            currentSpeed = minimumCruiseSpeed * Mathf.SmoothStep(0f, 1f, t);
+            float t = Mathf.Clamp01(elapsed / config.Reels.AccelerationDuration);
+            currentSpeed = config.Reels.CruiseSpeed * Mathf.SmoothStep(0f, 1f, t);
             AdvanceReel(currentSpeed * GetDeltaTime());
             yield return null;
         }
 
-        currentSpeed = minimumCruiseSpeed;
-        state = ReelState.Cruising;
+        currentSpeed = config.Reels.CruiseSpeed;
 
         elapsed = 0f;
-        while (elapsed < minimumCruiseDuration)
+        while (elapsed < config.Reels.CruiseDuration)
         {
             elapsed += GetDeltaTime();
             AdvanceReel(currentSpeed * GetDeltaTime());
             yield return null;
         }
 
-        state = ReelState.Decelerating;
 
         // Travel far enough to stop at the next exact symbol boundary.
         float distanceToBoundary = scrollOffset <= 0.001f
@@ -265,19 +210,19 @@ public sealed class SlotReel : MonoBehaviour
             : symbolHeight - scrollOffset;
 
         float decelerationDistance =
-            distanceToBoundary + extraStopCycles * symbolHeight;
+            distanceToBoundary + config.Reels.ExtraStopCycles * symbolHeight;
 
         float startOffset = scrollOffset;
         float remainingDistance = decelerationDistance;
         elapsed = 0f;
 
         // Integrate a smooth deceleration curve over a fixed duration.
-        while (elapsed < decelerationDuration)
+        while (elapsed < config.Reels.DecelerationDuration)
         {
             float dt = GetDeltaTime();
             elapsed += dt;
 
-            float t = Mathf.Clamp01(elapsed / decelerationDuration);
+            float t = Mathf.Clamp01(elapsed / config.Reels.DecelerationDuration);
             float eased = Mathf.SmoothStep(0f, 1f, t);
 
             float desiredOffset = startOffset + decelerationDistance * eased;
@@ -302,7 +247,6 @@ public sealed class SlotReel : MonoBehaviour
 
         currentSpeed = 0f;
         IsSpinning = false;
-        state = ReelState.Idle;
         spinRoutine = null;
 
         SpinCompleted?.Invoke(this, target);

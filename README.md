@@ -13,7 +13,26 @@ I kept the project focused on a small but solid gameplay loop:
 - reels spin and stop
 - results appear on the screen
 
-It is not a huge casino game, but it is a clean base that can grow later with win checks, sound effects, score systems, UI upgrades, and more game modes.
+It is not a huge casino game, but it has a simple wallet, betting, and payout flow. It can still grow later with more win rules, UI updates, and game modes.
+
+## Unity Setup
+
+The settings are split into two assets so game rules and visual assets stay separate:
+
+- `SlotMachineConfig` holds symbols, reel settings, starting money, and bet limits.
+- `SlotMachinePresentationConfig` holds the popup, bet option, and notification prefabs, plus sound clips and display colors.
+
+The `SlotGameController` is the only place that needs the `SlotMachineConfig`. It passes those settings to its reels, so each reel does not need another copy of the same config.
+
+To connect the wallet and UI in a scene:
+
+1. Create a presentation asset from **Create > Slot Machine > Presentation**.
+2. Add the popup, bet option, and notification prefabs to that asset. Each bet option prefab needs a TMP text and `UIPointerHandler`; it does not need a Unity Button.
+3. Add `SlotMachineGameManager` to the scene.
+4. Assign its `Game` field to the scene's `SlotGameController`, its `Presentation` field to the presentation asset, and its `Wallet Text` field to the money TMP text.
+5. Add the audio clips you have to the presentation asset. The game manager uses an AudioSource on its own GameObject.
+
+Bet choices come from the minimum, maximum, and step values in `SlotMachineConfig`. Two or more matching symbols that include the center reel pay the center symbol's multiplier times the bet.
 
 ## Instructions to Run WebGL Build
 
@@ -40,12 +59,14 @@ This project already includes a few small things that make it feel a bit more co
 
 - weighted symbol chances so some symbols appear more often than others
 - reel stagger timing so the reels do not all stop at the exact same moment
-- sound references for lever pull, reel spin, stop, win, and jackpot
-- config-based setup, so the game values can be changed without rewriting the logic
+- a wallet that spends the chosen bet and adds winning payouts
+- win and low-money messages, plus a small wallet animation
+- sound clips and UI prefabs grouped in a separate presentation config
+- gameplay settings in one config, shared with all reels
 - click support on the lever through a pointer handler
 - smooth reel animation and symbol pool reuse
 
-There are no huge bonus systems like a full money system, advanced win lines, or complex GUI yet, but the project already has a good base for those features later.
+There are no advanced pay lines or large bonus rounds yet, but the project already has a base for adding them later.
 
 ## My Thought Process / Approach
 
@@ -53,9 +74,10 @@ I wanted to build this in a way that felt easy to work with and easy to expand. 
 
 The main idea was to separate the game into small parts:
 
-- configuration holds the settings
+- one config holds the slot-machine rules, while another holds UI and sound assets
 - each reel handles its own animation
-- the controller manages the overall spin flow
+- the game controller manages the reels and spin flow
+- the game manager handles the wallet, bets, and result messages
 - the lever handles player input
 - pointer logic handles UI clicks
 

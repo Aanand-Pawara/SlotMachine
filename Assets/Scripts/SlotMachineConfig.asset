@@ -33,13 +33,6 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: c745129759d268e4d996521004dff741, type: 3}
     weight: 15
     payoutMultiplier: 1
-  audio:
-    leverPull: {fileID: 0}
-    reelSpin: {fileID: 0}
-    reelStop: {fileID: 0}
-    buttonClick: {fileID: 0}
-    win: {fileID: 0}
-    jackpot: {fileID: 0}
   reels:
     reelCount: 3
     visibleRows: 10
@@ -50,6 +43,7 @@ MonoBehaviour:
     cruiseDuration: 0.8
     decelerationDuration: 0.25
     stopStaggerDelay: 0.25
+    extraStopCycles: 2
   betting:
     startingBalance: 1000
     minimumBet: 10
