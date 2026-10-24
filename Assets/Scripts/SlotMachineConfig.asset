@@ -37,9 +37,9 @@ MonoBehaviour:
     jackpot: {fileID: 0}
   reels:
     reelCount: 3
-    visibleRows: 173
-    bufferRows: 114
-    symbolHeight: 10
+    visibleRows: 10
+    bufferRows: 10
+    symbolHeight: 20
     cruiseSpeed: 1000
     accelerationDuration: 0.25
     cruiseDuration: 0.8

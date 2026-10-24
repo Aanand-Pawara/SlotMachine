@@ -349,44 +349,68 @@ public sealed class SlotReel : MonoBehaviour
         symbolViews[centerIndex].sprite = target.Sprite;
     }
 
+
+    private SlotMachineConfig.SymbolDefinition lastDisplayedSymbol;
+
+
     private SlotMachineConfig.SymbolDefinition GetRandomSymbol()
     {
-        if (config == null || config.Symbols.Count == 0)
-            return null;
+        IReadOnlyList<SlotMachineConfig.SymbolDefinition> symbols = config.Symbols;
 
         float totalWeight = 0f;
 
-        foreach (SlotMachineConfig.SymbolDefinition symbol in config.Symbols)
+        foreach (var symbol in symbols)
         {
-            if (IsSelectable(symbol))
-                totalWeight += symbol.Weight;
+            if (!IsSelectable(symbol))
+                continue;
+
+            if (symbols.Count > 1 && symbol == lastDisplayedSymbol)
+                continue;
+
+            totalWeight += symbol.Weight;
         }
 
+        // If only one selectable symbol exists, allow it to repeat.
         if (totalWeight <= 0f)
-            return null;
+            return GetLastValidSymbol();
 
         float roll = UnityEngine.Random.value * totalWeight;
         float cumulative = 0f;
 
-        foreach (SlotMachineConfig.SymbolDefinition symbol in config.Symbols)
+        foreach (var symbol in symbols)
         {
             if (!IsSelectable(symbol))
+                continue;
+
+            if (symbols.Count > 1 && symbol == lastDisplayedSymbol)
                 continue;
 
             cumulative += symbol.Weight;
 
             if (roll < cumulative)
+            {
+                lastDisplayedSymbol = symbol;
                 return symbol;
+            }
         }
 
-        for (int i = config.Symbols.Count - 1; i >= 0; i--)
+        return GetLastValidSymbol();
+    }
+
+    private SlotMachineConfig.SymbolDefinition GetLastValidSymbol()
+    {
+        foreach (var symbol in config.Symbols)
         {
-            if (IsSelectable(config.Symbols[i]))
-                return config.Symbols[i];
+            if (IsSelectable(symbol))
+            {
+                lastDisplayedSymbol = symbol;
+                return symbol;
+            }
         }
 
         return null;
     }
+
 
     private static bool IsSelectable(SlotMachineConfig.SymbolDefinition symbol)
     {
