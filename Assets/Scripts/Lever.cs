@@ -4,6 +4,9 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
+// This object controls the slot machine lever.
+// It changes the lever image between idle and pressed states,
+// blocks spam clicks, and sends an event when the player pulls it.
 [DisallowMultipleComponent]
 public sealed class Lever : MonoBehaviour
 {
@@ -19,10 +22,16 @@ public sealed class Lever : MonoBehaviour
     [SerializeField, Min(0f)] private float pressedDuration = 0.2f;
     [SerializeField, Min(0f)] private float cooldown = 0.15f;
 
+    // Called when the lever is pulled and the action is allowed.
     public event Action<Lever> Activated;
+
+    // Called after the lever animation finishes.
     public event Action<Lever> AnimationCompleted;
 
+    // True while the lever is moving between pressed and idle state.
     public bool IsAnimating => animationRoutine != null;
+
+    // True when the player can press the lever again.
     public bool IsInteractable { get; private set; } = true;
 
     private Coroutine animationRoutine;
@@ -63,6 +72,8 @@ public sealed class Lever : MonoBehaviour
         ShowState(IdleIndex);
     }
 
+    // Tries to pull the lever.
+    // If the lever is not ready, it will not start the animation.
     public bool TryActivate()
     {
         if (!isActiveAndEnabled || !IsInteractable || IsAnimating ||
@@ -75,11 +86,13 @@ public sealed class Lever : MonoBehaviour
         return true;
     }
 
+    // Simple method used by other scripts when they want to trigger the lever.
     public void Press()
     {
         TryActivate();
     }
 
+    // Lets the game disable or enable the lever by user action.
     public void SetInteractable(bool interactable)
     {
         IsInteractable = interactable;
@@ -93,6 +106,7 @@ public sealed class Lever : MonoBehaviour
         TryActivate();
     }
 
+    // Plays the press animation and then returns to idle.
     private IEnumerator PlayPressAnimation()
     {
         ShowState(PressedIndex);
@@ -105,6 +119,7 @@ public sealed class Lever : MonoBehaviour
         AnimationCompleted?.Invoke(this);
     }
 
+    // Changes the lever image to the selected sprite.
     private void ShowState(int index)
     {
         if (leverImage != null && stateSprites != null &&
@@ -115,6 +130,7 @@ public sealed class Lever : MonoBehaviour
         }
     }
 
+    // Stops the current animation if the lever is disabled or reset.
     private void StopAnimation()
     {
         if (animationRoutine == null)

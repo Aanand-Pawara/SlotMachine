@@ -5,6 +5,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+// This script controls one reel in the slot machine.
+// It creates the symbol pool, rotates symbols during the spin,
+// and stops at the correct result for that reel.
 [DisallowMultipleComponent]
 [RequireComponent(typeof(RectTransform), typeof(RectMask2D))]
 public sealed class SlotReel : MonoBehaviour
@@ -32,7 +35,10 @@ public sealed class SlotReel : MonoBehaviour
     [SerializeField, Min(0.01f)] private float decelerationDuration = 0.55f;
     [SerializeField, Min(1)] private int extraStopCycles = 2;
 
+    // Fired when this reel starts spinning.
     public event Action<SlotReel> SpinStarted;
+
+    // Fired when this reel reaches its final symbol result.
     public event Action<SlotReel, SlotMachineConfig.SymbolDefinition> SpinCompleted;
 
     public bool IsSpinning { get; private set; }
@@ -86,6 +92,7 @@ public sealed class SlotReel : MonoBehaviour
         SpinCompleted = null;
     }
 
+    // Starts a spin and stops on the chosen target symbol.
     public void SpinTo(SlotMachineConfig.SymbolDefinition target)
     {
         if (!isActiveAndEnabled || !initialized || IsSpinning)
@@ -105,6 +112,7 @@ public sealed class SlotReel : MonoBehaviour
         spinRoutine = StartCoroutine(SpinRoutine(target));
     }
 
+    // Stops the reel immediately in case the game needs to skip the animation.
     public void StopImmediately()
     {
         if (!IsSpinning)
@@ -120,6 +128,7 @@ public sealed class SlotReel : MonoBehaviour
         SpinCompleted?.Invoke(this, CurrentResult);
     }
 
+    // Replaces the config used for this reel.
     public void SetConfig(SlotMachineConfig newConfig)
     {
         if (IsSpinning)
@@ -138,6 +147,7 @@ public sealed class SlotReel : MonoBehaviour
         RebuildPool();
     }
 
+    // Creates the list of symbol images used by this reel.
     private void InitializePool()
     {
         if (config == null)
@@ -156,6 +166,7 @@ public sealed class SlotReel : MonoBehaviour
         RebuildPool();
     }
 
+    // Clears old images and builds a fresh symbol pool.
     private void RebuildPool()
     {
         StopSpinRoutine();
@@ -216,6 +227,7 @@ public sealed class SlotReel : MonoBehaviour
         initialized = symbolViews.Count == poolSize;
     }
 
+    // Controls the spin animation.
     private IEnumerator SpinRoutine(SlotMachineConfig.SymbolDefinition target)
     {
         IsSpinning = true;
@@ -284,7 +296,8 @@ public sealed class SlotReel : MonoBehaviour
         scrollOffset = 0f;
         ApplyPositions();
 
-        // The result was selected before animation. Reveal it in the center row.
+        // The final symbol was already chosen before the animation started.
+        // We now show it in the center row.
         ShowCenterSymbol(target);
 
         currentSpeed = 0f;
@@ -295,6 +308,7 @@ public sealed class SlotReel : MonoBehaviour
         SpinCompleted?.Invoke(this, target);
     }
 
+    // Moves the reel by a given distance and wraps symbols at the top.
     private void AdvanceReel(float distance)
     {
         if (distance <= 0f)
@@ -311,6 +325,7 @@ public sealed class SlotReel : MonoBehaviour
         ApplyPositions();
     }
 
+    // Moves the first symbol to the end of the list and gives it a new random sprite.
     private void RecycleTopSymbol()
     {
         if (symbolViews.Count == 0)
@@ -323,6 +338,7 @@ public sealed class SlotReel : MonoBehaviour
         top.sprite = GetRandomSymbol()?.Sprite ?? fallbackSprite;
     }
 
+    // Positions each symbol image in a vertical list.
     private void ApplyPositions()
     {
         if (symbolViews.Count == 0)
@@ -340,6 +356,7 @@ public sealed class SlotReel : MonoBehaviour
         }
     }
 
+    // Sets the center symbol to the chosen result.
     private void ShowCenterSymbol(SlotMachineConfig.SymbolDefinition target)
     {
         if (symbolViews.Count == 0 || target == null)
@@ -349,10 +366,9 @@ public sealed class SlotReel : MonoBehaviour
         symbolViews[centerIndex].sprite = target.Sprite;
     }
 
-
     private SlotMachineConfig.SymbolDefinition lastDisplayedSymbol;
 
-
+    // Chooses a symbol weighted by its drop chance.
     private SlotMachineConfig.SymbolDefinition GetRandomSymbol()
     {
         IReadOnlyList<SlotMachineConfig.SymbolDefinition> symbols = config.Symbols;
@@ -410,7 +426,6 @@ public sealed class SlotReel : MonoBehaviour
 
         return null;
     }
-
 
     private static bool IsSelectable(SlotMachineConfig.SymbolDefinition symbol)
     {

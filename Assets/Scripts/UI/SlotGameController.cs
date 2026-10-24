@@ -4,6 +4,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// This script is the main manager for the slot machine.
+// It checks the config, chooses symbols, starts the reel animations,
+// and tells the rest of the game when a spin has started and finished.
 [DisallowMultipleComponent]
 public sealed class SlotGameController : MonoBehaviour
 {
@@ -19,8 +22,13 @@ public sealed class SlotGameController : MonoBehaviour
     [Header("Lever")]
     [SerializeField] private Lever lever;
 
+    // Fired when a spin starts.
     public event Action SpinStarted;
+
+    // Fired when the spin is complete.
     public event Action SpinCompleted;
+
+    // Fired with the symbol result chosen for the spin.
     public event Action<IReadOnlyList<SlotMachineConfig.SymbolDefinition>> ResultsGenerated;
 
     public bool IsSpinning { get; private set; }
@@ -50,6 +58,9 @@ public sealed class SlotGameController : MonoBehaviour
     {
         TrySpin();
     }
+
+    // Try to start a spin.
+    // Returns true if everything is valid and the machine begins spinning.
     public bool TrySpin()
     {
         if (!isActiveAndEnabled || IsSpinning)
@@ -79,6 +90,7 @@ public sealed class SlotGameController : MonoBehaviour
         return true;
     }
 
+    // Replace the reel list safely.
     public void SetReels(IEnumerable<SlotReel> newReels)
     {
         if (IsSpinning)
@@ -99,6 +111,7 @@ public sealed class SlotGameController : MonoBehaviour
         }
     }
 
+    // Starts all reels one by one with stagger to make the animation feel natural.
     private IEnumerator SpinAllReels(
         IReadOnlyList<SlotMachineConfig.SymbolDefinition> results)
     {
@@ -134,6 +147,7 @@ public sealed class SlotGameController : MonoBehaviour
         FinishSpin();
     }
 
+    // Randomly chooses a symbol for each reel using the symbol weights.
     private List<SlotMachineConfig.SymbolDefinition> GenerateResults()
     {
         var results = new List<SlotMachineConfig.SymbolDefinition>(reels.Count);
@@ -208,6 +222,7 @@ public sealed class SlotGameController : MonoBehaviour
         return null;
     }
 
+    // Returns true if at least one reel is still spinning.
     private bool AnyReelSpinning()
     {
         foreach (SlotReel reel in reels)
@@ -219,6 +234,7 @@ public sealed class SlotGameController : MonoBehaviour
         return false;
     }
 
+    // Checks that the machine has enough setup before starting a spin.
     private bool ValidateConfiguration()
     {
         if (config == null)
@@ -242,6 +258,7 @@ public sealed class SlotGameController : MonoBehaviour
         return true;
     }
 
+    // Removes broken or duplicate reel references.
     private void RemoveInvalidReels()
     {
         reels.RemoveAll(reel => reel == null);
