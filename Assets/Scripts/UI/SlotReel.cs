@@ -186,10 +186,11 @@ public sealed class SlotReel : MonoBehaviour
 
         while (elapsed < config.Reels.AccelerationDuration)
         {
-            elapsed += GetDeltaTime();
+            float deltaTime = GetDeltaTime();
+            elapsed += deltaTime;
             float t = Mathf.Clamp01(elapsed / config.Reels.AccelerationDuration);
-            currentSpeed = config.Reels.CruiseSpeed * Mathf.SmoothStep(0f, 1f, t);
-            AdvanceReel(currentSpeed * GetDeltaTime());
+            currentSpeed = config.Reels.CruiseSpeed * t;
+            AdvanceReel(currentSpeed * deltaTime);
             yield return null;
         }
 
@@ -198,43 +199,45 @@ public sealed class SlotReel : MonoBehaviour
         elapsed = 0f;
         while (elapsed < config.Reels.CruiseDuration)
         {
-            elapsed += GetDeltaTime();
-            AdvanceReel(currentSpeed * GetDeltaTime());
+            float deltaTime = GetDeltaTime();
+            elapsed += deltaTime;
+            AdvanceReel(currentSpeed * deltaTime);
             yield return null;
         }
 
 
-        // Travel far enough to stop at the next exact symbol boundary.
         float distanceToBoundary = scrollOffset <= 0.001f
             ? symbolHeight
             : symbolHeight - scrollOffset;
-
-        float decelerationDistance =
+        float minimumDistance =
             distanceToBoundary + config.Reels.ExtraStopCycles * symbolHeight;
-
-        float startOffset = scrollOffset;
-        float remainingDistance = decelerationDistance;
+        float cruiseSpeed = Mathf.Max(0.01f, config.Reels.CruiseSpeed);
+        float minimumDistanceForDuration =
+            cruiseSpeed * config.Reels.DecelerationDuration * 0.5f;
+        float distanceToTravel = Mathf.Max(minimumDistance, minimumDistanceForDuration);
+        float extraCycles = Mathf.Ceil(
+            Mathf.Max(0f, distanceToTravel - distanceToBoundary) / symbolHeight);
+        float decelerationDistance = distanceToBoundary + extraCycles * symbolHeight;
+        float decelerationDuration = decelerationDistance * 2f / cruiseSpeed;
+        float traveledDistance = 0f;
         elapsed = 0f;
 
-        // Integrate a smooth deceleration curve over a fixed duration.
-        while (elapsed < config.Reels.DecelerationDuration)
+        while (elapsed < decelerationDuration)
         {
             float dt = GetDeltaTime();
             elapsed += dt;
 
-            float t = Mathf.Clamp01(elapsed / config.Reels.DecelerationDuration);
-            float eased = Mathf.SmoothStep(0f, 1f, t);
-
-            float desiredOffset = startOffset + decelerationDistance * eased;
-            float delta = desiredOffset - startOffset;
-            startOffset = desiredOffset;
+            float t = Mathf.Clamp01(elapsed / decelerationDuration);
+            float eased = 2f * t - t * t;
+            float desiredDistance = decelerationDistance * eased;
+            float delta = desiredDistance - traveledDistance;
+            traveledDistance = desiredDistance;
 
             AdvanceReel(delta);
-            remainingDistance -= delta;
             yield return null;
         }
 
-        // Finish on an exact symbol boundary.
+        float remainingDistance = decelerationDistance - traveledDistance;
         if (remainingDistance > 0f)
             AdvanceReel(remainingDistance);
 

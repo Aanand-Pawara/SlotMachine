@@ -21,10 +21,11 @@ MonoBehaviour:
   buttonClick: {fileID: 0}
   buttonHover: {fileID: 0}
   popupOpen: {fileID: 0}
-  popupClose: {fileID: 0}
   lose: {fileID: 0}
   win: {fileID: 0}
   jackpot: {fileID: 0}
+  backgroundMusic: {fileID: 0}
+  backgroundMusicVolume: 0.35
   currencySymbol: $
   winColor: {r: 0.3, g: 1, b: 0.5, a: 1}
   lossColor: {r: 1, g: 0.35, b: 0.35, a: 1}

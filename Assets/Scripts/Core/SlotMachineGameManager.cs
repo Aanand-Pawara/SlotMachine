@@ -20,6 +20,7 @@ namespace SlotMachine.Core
         private IReadOnlyList<SlotMachineConfig.SymbolDefinition> spinResults;
         private BettingPopupController bettingPopup;
         private AudioSource audioSource;
+        private AudioSource backgroundMusicSource;
         private Canvas uiCanvas;
         private UIPointerHandler screenInput;
         private Coroutine walletAnimation;
@@ -54,6 +55,13 @@ namespace SlotMachine.Core
             audioSource.playOnAwake = false;
             audioSource.loop = false;
 
+            backgroundMusicSource = gameObject.AddComponent<AudioSource>();
+            backgroundMusicSource.playOnAwake = false;
+            backgroundMusicSource.loop = true;
+            backgroundMusicSource.spatialBlend = 0f;
+            backgroundMusicSource.clip = presentation.BackgroundMusic;
+            backgroundMusicSource.volume = presentation.BackgroundMusicVolume;
+
             walletTextScale = walletText.rectTransform.localScale;
             walletTextColor = walletText.color;
             balance = Mathf.Max(0, game.Config.Betting.StartingBalance);
@@ -66,6 +74,10 @@ namespace SlotMachine.Core
         {
             if (screenInput != null)
                 screenInput.Clicked += HandleScreenClick;
+
+            if (backgroundMusicSource != null && backgroundMusicSource.clip != null &&
+                !backgroundMusicSource.isPlaying)
+                backgroundMusicSource.Play();
 
             if (game == null)
                 return;
@@ -89,6 +101,9 @@ namespace SlotMachine.Core
 
             if (screenInput != null)
                 screenInput.Clicked -= HandleScreenClick;
+
+            if (backgroundMusicSource != null)
+                backgroundMusicSource.Stop();
 
             if (walletAnimation != null)
             {
@@ -157,8 +172,7 @@ namespace SlotMachine.Core
                 PlaceBet,
                 PlaySound,
                 presentation.ButtonHover,
-                presentation.ButtonClick,
-                presentation.PopupClose);
+                presentation.ButtonClick);
             PlaySound(presentation.PopupOpen);
         }
 

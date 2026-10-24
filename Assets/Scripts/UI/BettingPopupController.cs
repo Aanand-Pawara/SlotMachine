@@ -38,7 +38,6 @@ namespace SlotMachine.UI
         private Action<AudioClip> playSound;
         private AudioClip hoverSound;
         private AudioClip clickSound;
-        private AudioClip closeSound;
 
         private void Awake()
         {
@@ -62,8 +61,7 @@ namespace SlotMachine.UI
             Func<int, bool> onSelection,
             Action<AudioClip> soundPlayer,
             AudioClip hoverClip,
-            AudioClip clickClip,
-            AudioClip closeClip)
+            AudioClip clickClip)
         {
             if (parentCanvas == null || bets == null || betOptionPrefab == null || optionContainer == null)
             {
@@ -77,7 +75,6 @@ namespace SlotMachine.UI
             playSound = soundPlayer;
             hoverSound = hoverClip;
             clickSound = clickClip;
-            closeSound = closeClip;
             selectionInProgress = false;
             gameObject.SetActive(true);
             if (titleText != null)
@@ -85,7 +82,9 @@ namespace SlotMachine.UI
             BuildOptions(bets, betOptionPrefab);
 
             Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)optionContainer);
             LayoutRebuilder.ForceRebuildLayoutImmediate(popupRoot);
+            Canvas.ForceUpdateCanvases();
             popupRoot.SetAsLastSibling();
             popupRoot.gameObject.SetActive(true);
             float finalScale = PositionAt(screenPosition, parentCanvas);
@@ -169,9 +168,19 @@ namespace SlotMachine.UI
                 return 1f;
             }
 
+            float safeMargin = Mathf.Min(8f, Mathf.Min(bounds.width, bounds.height) * 0.25f);
+            bounds = Rect.MinMaxRect(
+                bounds.xMin + safeMargin,
+                bounds.yMin + safeMargin,
+                bounds.xMax - safeMargin,
+                bounds.yMax - safeMargin);
+            if (bounds.width <= 0f || bounds.height <= 0f)
+                bounds = parent.rect;
+
             float scale = Mathf.Min(
                 1f,
                 Mathf.Min(bounds.width / popupSize.x, bounds.height / popupSize.y));
+            scale = Mathf.Max(0.001f, scale);
             popupRoot.anchorMin = new Vector2(0.5f, 0.5f);
             popupRoot.anchorMax = new Vector2(0.5f, 0.5f);
             popupRoot.pivot = new Vector2(0.5f, 0.5f);
@@ -179,8 +188,12 @@ namespace SlotMachine.UI
             popupRoot.localScale = Vector3.one * scale;
 
             Vector2 halfSize = popupSize * (scale * 0.5f);
-            localPosition.x = Mathf.Clamp(localPosition.x, bounds.xMin + halfSize.x, bounds.xMax - halfSize.x);
-            localPosition.y = Mathf.Clamp(localPosition.y, bounds.yMin + halfSize.y, bounds.yMax - halfSize.y);
+            float minX = bounds.xMin + halfSize.x;
+            float maxX = bounds.xMax - halfSize.x;
+            float minY = bounds.yMin + halfSize.y;
+            float maxY = bounds.yMax - halfSize.y;
+            localPosition.x = Mathf.Clamp(localPosition.x, minX, Mathf.Max(minX, maxX));
+            localPosition.y = Mathf.Clamp(localPosition.y, minY, Mathf.Max(minY, maxY));
             popupRoot.anchoredPosition = localPosition;
             return scale;
         }
@@ -251,7 +264,6 @@ namespace SlotMachine.UI
                 selectionInProgress = true;
                 if (titleText != null)
                     titleText.text = $"BET {currencySymbol}{binding.Bet} - GOOD LUCK!";
-                playSound?.Invoke(closeSound);
                 StartCoroutine(CloseAfterSelection(binding));
             }
             else

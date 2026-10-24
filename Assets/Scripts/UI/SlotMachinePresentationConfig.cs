@@ -16,10 +16,11 @@ public sealed class SlotMachinePresentationConfig : ScriptableObject
     [SerializeField] private AudioClip buttonClick;
     [SerializeField] private AudioClip buttonHover;
     [SerializeField] private AudioClip popupOpen;
-    [SerializeField] private AudioClip popupClose;
     [SerializeField] private AudioClip lose;
     [SerializeField] private AudioClip win;
     [SerializeField] private AudioClip jackpot;
+    [SerializeField] private AudioClip backgroundMusic;
+    [SerializeField, Range(0f, 1f)] private float backgroundMusicVolume = 0.35f;
 
     [Header("Display")]
     [SerializeField] private string currencySymbol = "$";
@@ -37,10 +38,11 @@ public sealed class SlotMachinePresentationConfig : ScriptableObject
     public AudioClip ButtonClick => buttonClick;
     public AudioClip ButtonHover => buttonHover;
     public AudioClip PopupOpen => popupOpen;
-    public AudioClip PopupClose => popupClose;
     public AudioClip Lose => lose;
     public AudioClip Win => win;
     public AudioClip Jackpot => jackpot;
+    public AudioClip BackgroundMusic => backgroundMusic;
+    public float BackgroundMusicVolume => backgroundMusicVolume;
     public string CurrencySymbol => currencySymbol;
     public Color WinColor => winColor;
     public Color LossColor => lossColor;

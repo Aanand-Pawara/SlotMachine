@@ -20,7 +20,7 @@ It is not a huge casino game, but it has a simple wallet, betting, and payout fl
 The settings are split into two assets so game rules and visual assets stay separate:
 
 - `SlotMachineConfig` holds symbols, reel settings, starting money, and bet limits.
-- `SlotMachinePresentationConfig` holds the popup, bet option, and notification prefabs, plus sound clips and display colors.
+- `SlotMachinePresentationConfig` holds the popup, bet option, and notification prefabs, plus sound clips, looping background music, and display colors.
 
 The `SlotGameController` is the only place that needs the `SlotMachineConfig`. It passes those settings to its reels, so each reel does not need another copy of the same config.
 
@@ -30,9 +30,9 @@ To connect the wallet and UI in a scene:
 2. Add the popup, bet option, and notification prefabs to that asset. Each bet option prefab needs a TMP text and `UIPointerHandler`; it does not need a Unity Button.
 3. Add `SlotMachineGameManager` to the scene.
 4. Assign its `Game` field to the scene's `SlotGameController`, its `Presentation` field to the presentation asset, and its `Wallet Text` field to the money TMP text.
-5. Add the audio clips you have to the presentation asset. The game manager uses an AudioSource on its own GameObject.
+5. Add the sound clips and background music to the presentation asset. Background music loops while the game manager is enabled; its volume can be changed in the same asset.
 
-Bet choices come from the minimum, maximum, and step values in `SlotMachineConfig`. Two or more matching symbols that include the center reel pay the center symbol's multiplier times the bet.
+Bet choices come from the minimum, maximum, and step values in `SlotMachineConfig`. All reels must show the same symbol to win. The payout uses that symbol's multiplier times the bet.
 
 ## Instructions to Run WebGL Build
 
@@ -65,7 +65,7 @@ This project already includes a few small things that make it feel a bit more co
 - the lever is an animation only; choosing a bet starts the lever and reel spin
 - sound clips and UI prefabs grouped in a separate presentation config
 - gameplay settings in one config, shared with all reels
-- click support on the lever through a pointer handler
+- the lever moves after the player chooses a bet; clicking the screen opens the bet menu
 - smooth reel animation and symbol pool reuse
 
 There are no advanced pay lines or large bonus rounds yet, but the project already has a base for adding them later.
