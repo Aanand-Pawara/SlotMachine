@@ -61,6 +61,8 @@ This project already includes a few small things that make it feel a bit more co
 - reel stagger timing so the reels do not all stop at the exact same moment
 - a wallet that spends the chosen bet and adds winning payouts
 - win and low-money messages, plus a small wallet animation
+- clicking anywhere opens the bet menu at the pointer, and the menu stays inside the screen safe area
+- the lever is an animation only; choosing a bet starts the lever and reel spin
 - sound clips and UI prefabs grouped in a separate presentation config
 - gameplay settings in one config, shared with all reels
 - click support on the lever through a pointer handler

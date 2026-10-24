@@ -13,12 +13,16 @@ MonoBehaviour:
   m_Name: SlotMachinePresentation
   m_EditorClassIdentifier: Assembly-CSharp::SlotMachinePresentationConfig
   bettingPopupPrefab: {fileID: 6700172757024622311, guid: 7751b5b6ac2c2944b93e7d0a3d8173b1, type: 3}
-  notificationPrefab: {fileID: 0}
+  notificationPrefab: {fileID: 7581325230481049511, guid: e11290e9e673fb948a61ccd1f9f03ac2, type: 3}
   betOptionPrefab: {fileID: 8812720122636627062, guid: 3f239b8f275ee514a888f9a26333d963, type: 3}
   leverPull: {fileID: 8300000, guid: cbb379439c459c94fbc4c309ef830841, type: 3}
   reelSpin: {fileID: 0}
   reelStop: {fileID: 0}
   buttonClick: {fileID: 0}
+  buttonHover: {fileID: 0}
+  popupOpen: {fileID: 0}
+  popupClose: {fileID: 0}
+  lose: {fileID: 0}
   win: {fileID: 0}
   jackpot: {fileID: 0}
   currencySymbol: $

@@ -28,9 +28,6 @@ public sealed class SlotGameController : MonoBehaviour
     // Fired with the symbol result chosen for the spin.
     public event Action<IReadOnlyList<SlotMachineConfig.SymbolDefinition>> ResultsGenerated;
 
-    // Fired when the player clicks the lever and needs to choose a bet.
-    public event Action<Vector2> BetRequested;
-
     public bool IsSpinning { get; private set; }
     public IReadOnlyList<SlotReel> Reels => reels;
     public SlotMachineConfig Config => config;
@@ -43,17 +40,8 @@ public sealed class SlotGameController : MonoBehaviour
         ConfigureReels();
     }
 
-    private void OnEnable()
-    {
-        if (lever != null)
-            lever.ActivationRequested += HandleLeverRequest;
-    }
-
     private void OnDisable()
     {
-        if (lever != null)
-            lever.ActivationRequested -= HandleLeverRequest;
-
         if (spinRoutine != null)
         {
             StopCoroutine(spinRoutine);
@@ -61,12 +49,6 @@ public sealed class SlotGameController : MonoBehaviour
         }
 
         IsSpinning = false;
-    }
-
-    private void HandleLeverRequest(Lever requestedLever, Vector2 screenPosition)
-    {
-        if (!IsSpinning)
-            BetRequested?.Invoke(screenPosition);
     }
 
     // Try to start a spin.

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using SlotMachine.UI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace SlotMachine.Core
 {
@@ -19,6 +21,7 @@ namespace SlotMachine.Core
         private BettingPopupController bettingPopup;
         private AudioSource audioSource;
         private Canvas uiCanvas;
+        private UIPointerHandler screenInput;
         private Coroutine walletAnimation;
         private int balance;
         private int currentBet;
@@ -43,6 +46,8 @@ namespace SlotMachine.Core
                 return;
             }
 
+            CreateScreenInput();
+
             audioSource = GetComponent<AudioSource>();
             if (audioSource == null)
                 audioSource = gameObject.AddComponent<AudioSource>();
@@ -59,10 +64,12 @@ namespace SlotMachine.Core
 
         private void OnEnable()
         {
+            if (screenInput != null)
+                screenInput.Clicked += HandleScreenClick;
+
             if (game == null)
                 return;
 
-            game.BetRequested += OpenBetPopup;
             game.SpinStarted += HandleSpinStarted;
             game.SpinCompleted += HandleSpinCompleted;
             game.ResultsGenerated += HandleResultsGenerated;
@@ -72,7 +79,6 @@ namespace SlotMachine.Core
         {
             if (game != null)
             {
-                game.BetRequested -= OpenBetPopup;
                 game.SpinStarted -= HandleSpinStarted;
                 game.SpinCompleted -= HandleSpinCompleted;
                 game.ResultsGenerated -= HandleResultsGenerated;
@@ -80,6 +86,9 @@ namespace SlotMachine.Core
 
             if (bettingPopup != null)
                 bettingPopup.Close();
+
+            if (screenInput != null)
+                screenInput.Clicked -= HandleScreenClick;
 
             if (walletAnimation != null)
             {
@@ -92,6 +101,34 @@ namespace SlotMachine.Core
                 walletText.rectTransform.localScale = walletTextScale;
                 walletText.color = walletTextColor;
             }
+        }
+
+        private void CreateScreenInput()
+        {
+            GameObject inputObject = new("SlotMachineScreenInput");
+            RectTransform inputRect = inputObject.AddComponent<RectTransform>();
+            inputRect.SetParent(uiCanvas.transform, false);
+            inputRect.anchorMin = Vector2.zero;
+            inputRect.anchorMax = Vector2.one;
+            inputRect.offsetMin = Vector2.zero;
+            inputRect.offsetMax = Vector2.zero;
+
+            Image inputImage = inputObject.AddComponent<Image>();
+            inputImage.color = Color.clear;
+            inputImage.raycastTarget = true;
+
+            screenInput = inputObject.AddComponent<UIPointerHandler>();
+            screenInput.AllowRightClick = true;
+            inputObject.layer = uiCanvas.gameObject.layer;
+            inputRect.SetAsLastSibling();
+        }
+
+        private void HandleScreenClick(PointerEventData eventData)
+        {
+            if (eventData == null || game == null || game.IsSpinning)
+                return;
+
+            OpenBetPopup(eventData.position);
         }
 
         private void OpenBetPopup(Vector2 screenPosition)
@@ -117,33 +154,41 @@ namespace SlotMachine.Core
                 betOptions,
                 presentation.BetOptionPrefab,
                 presentation.CurrencySymbol,
-                PlaceBet);
-            PlaySound(presentation.ButtonClick);
+                PlaceBet,
+                PlaySound,
+                presentation.ButtonHover,
+                presentation.ButtonClick,
+                presentation.PopupClose);
+            PlaySound(presentation.PopupOpen);
         }
 
-        private void PlaceBet(int amount)
+        private bool PlaceBet(int amount)
         {
             if (!betOptions.Contains(amount))
             {
                 Debug.LogWarning($"The selected bet {amount} is not in the configured bet options.", this);
-                return;
+                return false;
             }
 
             if (balance < amount)
             {
                 ShowNotification("Not enough money", presentation.LossColor, lastClickPosition);
-                PlaySound(presentation.ReelStop);
-                return;
+                PlaySound(presentation.Lose);
+                return false;
             }
 
             currentBet = amount;
             if (!game.TrySpin())
-                return;
+            {
+                ShowNotification("Could not start the spin", presentation.MessageColor, lastClickPosition);
+                return false;
+            }
 
             balance -= currentBet;
             RefreshWallet();
             AnimateWallet(false);
             PlaySound(presentation.LeverPull);
+            return true;
         }
 
         private void HandleSpinStarted()
@@ -162,7 +207,7 @@ namespace SlotMachine.Core
             if (payout <= 0)
             {
                 ShowNotification("No win this time", presentation.MessageColor, lastClickPosition);
-                PlaySound(presentation.ReelStop);
+                PlaySound(presentation.Lose);
                 return;
             }
 
@@ -177,21 +222,20 @@ namespace SlotMachine.Core
             IReadOnlyList<SlotMachineConfig.SymbolDefinition> results,
             int bet)
         {
-            if (results == null || results.Count == 0 || bet <= 0)
+            if (results == null || results.Count < 2 || bet <= 0)
                 return 0;
 
             SlotMachineConfig.SymbolDefinition centerSymbol = results[results.Count / 2];
-            if (centerSymbol == null)
+            if (centerSymbol == null || string.IsNullOrWhiteSpace(centerSymbol.Id))
                 return 0;
 
-            int matches = 0;
             foreach (SlotMachineConfig.SymbolDefinition symbol in results)
             {
-                if (symbol != null && symbol.Id == centerSymbol.Id)
-                    matches++;
+                if (symbol == null || symbol.Id != centerSymbol.Id)
+                    return 0;
             }
 
-            if (matches < 2 || centerSymbol.PayoutMultiplier <= 0)
+            if (centerSymbol.PayoutMultiplier <= 0)
                 return 0;
 
             long payout = (long)bet * centerSymbol.PayoutMultiplier;

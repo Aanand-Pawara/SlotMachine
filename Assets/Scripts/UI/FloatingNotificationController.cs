@@ -46,8 +46,12 @@ namespace SlotMachine.UI
             }
 
             messageText.text = message;
+            messageText.raycastTarget = false;
             if (background != null)
+            {
                 background.color = new Color(color.r, color.g, color.b, 0.82f);
+                background.raycastTarget = false;
+            }
 
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
                     canvasRect, screenPosition, uiCamera, out Vector2 localPosition))

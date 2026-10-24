@@ -48,4 +48,4 @@ MonoBehaviour:
     startingBalance: 1000
     minimumBet: 10
     maximumBet: 100
-    betStep: 10
+    betStep: 45

@@ -34,6 +34,12 @@ public sealed class UIPointerHandler : MonoBehaviour, IPointerClickHandler, IPoi
         set => interactable = value;
     }
 
+    public bool AllowRightClick
+    {
+        get => allowRightClick;
+        set => allowRightClick = value;
+    }
+
     public void OnPointerClick(PointerEventData eventData)
     {
         if (!CanProcess(eventData)) return;

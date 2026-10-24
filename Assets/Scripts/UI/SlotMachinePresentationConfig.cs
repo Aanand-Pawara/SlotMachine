@@ -14,6 +14,10 @@ public sealed class SlotMachinePresentationConfig : ScriptableObject
     [SerializeField] private AudioClip reelSpin;
     [SerializeField] private AudioClip reelStop;
     [SerializeField] private AudioClip buttonClick;
+    [SerializeField] private AudioClip buttonHover;
+    [SerializeField] private AudioClip popupOpen;
+    [SerializeField] private AudioClip popupClose;
+    [SerializeField] private AudioClip lose;
     [SerializeField] private AudioClip win;
     [SerializeField] private AudioClip jackpot;
 
@@ -31,6 +35,10 @@ public sealed class SlotMachinePresentationConfig : ScriptableObject
     public AudioClip ReelSpin => reelSpin;
     public AudioClip ReelStop => reelStop;
     public AudioClip ButtonClick => buttonClick;
+    public AudioClip ButtonHover => buttonHover;
+    public AudioClip PopupOpen => popupOpen;
+    public AudioClip PopupClose => popupClose;
+    public AudioClip Lose => lose;
     public AudioClip Win => win;
     public AudioClip Jackpot => jackpot;
     public string CurrencySymbol => currencySymbol;
