@@ -11,30 +11,29 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 169cfbce04e95b544835fcfd93be4211, type: 3}
   m_Name: SlotMachineConfig
-  m_EditorClassIdentifier: Assembly-CSharp::SlotMachineConfig
+  m_EditorClassIdentifier: Assembly-CSharp::SlotMachine.Core.SlotMachineConfig
   symbols:
   - id: 1
     displayName: Seven
     sprite: {fileID: 21300000, guid: 2074e5bc8378a9a43aea726b251e86e8, type: 3}
     weight: 5
-    payoutMultiplier: 1
+    payoutMultiplier: 10
   - id: 2
     displayName: Bell
     sprite: {fileID: 21300000, guid: 9490bf27783a6d74a99ac2e79a0db9d0, type: 3}
     weight: 30
-    payoutMultiplier: 1
+    payoutMultiplier: 2
   - id: 50
     displayName: Cherry
     sprite: {fileID: 21300000, guid: 97539cad0851a8c4790576a689e34f4f, type: 3}
     weight: 1
-    payoutMultiplier: 1
+    payoutMultiplier: 20
   - id: 4
     displayName: Bar
     sprite: {fileID: 21300000, guid: c745129759d268e4d996521004dff741, type: 3}
     weight: 15
-    payoutMultiplier: 1
+    payoutMultiplier: 4
   reels:
-    reelCount: 3
     visibleRows: 10
     bufferRows: 10
     symbolHeight: 20

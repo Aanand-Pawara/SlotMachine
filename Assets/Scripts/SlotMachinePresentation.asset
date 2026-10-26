@@ -11,21 +11,21 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 61a6b6fa08e29e74e83287763c9c2421, type: 3}
   m_Name: SlotMachinePresentation
-  m_EditorClassIdentifier: Assembly-CSharp::SlotMachinePresentationConfig
+  m_EditorClassIdentifier: Assembly-CSharp::SlotMachine.UI.SlotMachinePresentationConfig
   bettingPopupPrefab: {fileID: 6700172757024622311, guid: 7751b5b6ac2c2944b93e7d0a3d8173b1, type: 3}
   notificationPrefab: {fileID: 7581325230481049511, guid: e11290e9e673fb948a61ccd1f9f03ac2, type: 3}
   betOptionPrefab: {fileID: 8812720122636627062, guid: 3f239b8f275ee514a888f9a26333d963, type: 3}
   leverPull: {fileID: 8300000, guid: cbb379439c459c94fbc4c309ef830841, type: 3}
-  reelSpin: {fileID: 0}
-  reelStop: {fileID: 0}
-  buttonClick: {fileID: 0}
-  buttonHover: {fileID: 0}
-  popupOpen: {fileID: 0}
-  lose: {fileID: 0}
-  win: {fileID: 0}
-  jackpot: {fileID: 0}
-  backgroundMusic: {fileID: 0}
-  backgroundMusicVolume: 0.35
+  reelSpin: {fileID: 8300000, guid: 3d8a1441267f5044aa62ba2f29e5f419, type: 3}
+  reelStop: {fileID: 8300000, guid: 108244b9656facf41948146ad5fa9ba6, type: 3}
+  buttonClick: {fileID: 8300000, guid: 39b8d14ed7a3df1468f24d21b6db4b75, type: 3}
+  buttonHover: {fileID: 8300000, guid: 0187356edf81ffe4e87c86b8bbc3caae, type: 3}
+  popupOpen: {fileID: 8300000, guid: 4c2453ce855573443b963295dc8d576e, type: 3}
+  lose: {fileID: 8300000, guid: 1be1f164abf3dd048b2ad8fd7b709dc4, type: 3}
+  win: {fileID: 8300000, guid: 802c71e4e9c30924180f3d701688cd29, type: 3}
+  jackpot: {fileID: 8300000, guid: 88154cc6e8d29c84e881fb6621b93847, type: 3}
+  backgroundMusic: {fileID: 8300000, guid: b0ec188e8c6482541850e967c22b48ab, type: 3}
+  backgroundMusicVolume: 0.121
   currencySymbol: $
   winColor: {r: 0.3, g: 1, b: 0.5, a: 1}
   lossColor: {r: 1, g: 0.35, b: 0.35, a: 1}

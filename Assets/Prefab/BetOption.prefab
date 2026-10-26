@@ -225,7 +225,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 175755a494a0f9d46baaccaabec2472f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UIPointerHandler
+  m_EditorClassIdentifier: Assembly-CSharp::SlotMachine.UI.UIPointerHandler
   interactable: 1
   allowRightClick: 0
   allowMiddleClick: 0

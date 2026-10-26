@@ -3,90 +3,90 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-// This script listens to mouse and pointer events on a Unity UI object.
-// It lets other scripts know when the player clicked, pressed, or moved over this object.
-[DisallowMultipleComponent]
-public sealed class UIPointerHandler : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler
+namespace SlotMachine.UI
 {
-    // Called when the pointer is clicked on this object.
-    public event Action<PointerEventData> Clicked;
-
-    // Called when the mouse button goes down.
-    public event Action<PointerEventData> PointerDown;
-
-    // Called when the mouse button is released.
-    public event Action<PointerEventData> PointerUp;
-
-    // Called when the pointer enters this object.
-    public event Action<PointerEventData> PointerEntered;
-
-    // Called when the pointer leaves this object.
-    public event Action<PointerEventData> PointerExited;
-
-    [SerializeField] private bool interactable = true;
-    [SerializeField] private bool allowRightClick;
-    [SerializeField] private bool allowMiddleClick;
-
-    // Can this object receive pointer input right now?
-    public bool Interactable
+    // Add this script to a UI object to listen for pointer actions.
+    // The Canvas also needs a Graphic Raycaster, and the scene needs an EventSystem.
+    [DisallowMultipleComponent]
+    public sealed class UIPointerHandler : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler
     {
-        get => interactable;
-        set => interactable = value;
-    }
+        // Other scripts can listen to these events to react to pointer actions.
+        public event Action<PointerEventData> Clicked;
+        public event Action<PointerEventData> PointerDown;
+        public event Action<PointerEventData> PointerUp;
+        public event Action<PointerEventData> PointerEntered;
+        public event Action<PointerEventData> PointerExited;
 
-    public bool AllowRightClick
-    {
-        get => allowRightClick;
-        set => allowRightClick = value;
-    }
+        // These settings decide which clicks the object accepts.
+        [SerializeField] private bool interactable = true;
+        [SerializeField] private bool allowRightClick;
+        [SerializeField] private bool allowMiddleClick;
 
-    public void OnPointerClick(PointerEventData eventData)
-    {
-        if (!CanProcess(eventData)) return;
-        if (eventData.button != PointerEventData.InputButton.Left &&
-            !(allowRightClick && eventData.button == PointerEventData.InputButton.Right) &&
-            !(allowMiddleClick && eventData.button == PointerEventData.InputButton.Middle))
-            return;
+        // Turn this off to ignore pointer actions without removing the component.
+        public bool Interactable
+        {
+            get => interactable;
+            set => interactable = value;
+        }
 
-        Clicked?.Invoke(eventData);
-    }
+        public bool AllowRightClick
+        {
+            get => allowRightClick;
+            set => allowRightClick = value;
+        }
 
-    public void OnPointerDown(PointerEventData eventData)
-    {
-        if (CanProcess(eventData) && eventData.button == PointerEventData.InputButton.Left)
-            PointerDown?.Invoke(eventData);
-    }
+        // Sends a click event when an allowed mouse button is clicked.
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (!CanProcess(eventData)) return;
+            if (eventData.button != PointerEventData.InputButton.Left &&
+                !(allowRightClick && eventData.button == PointerEventData.InputButton.Right) &&
+                !(allowMiddleClick && eventData.button == PointerEventData.InputButton.Middle))
+                return;
 
-    public void OnPointerUp(PointerEventData eventData)
-    {
-        if (CanProcess(eventData) && eventData.button == PointerEventData.InputButton.Left)
-            PointerUp?.Invoke(eventData);
-    }
+            Clicked?.Invoke(eventData);
+        }
 
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        if (CanProcess(eventData))
-            PointerEntered?.Invoke(eventData);
-    }
+        // Sends an event when the left mouse button is pressed down.
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            if (CanProcess(eventData) && eventData.button == PointerEventData.InputButton.Left)
+                PointerDown?.Invoke(eventData);
+        }
 
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        if (CanProcess(eventData))
-            PointerExited?.Invoke(eventData);
-    }
+        // Sends an event when the left mouse button is released.
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            if (CanProcess(eventData) && eventData.button == PointerEventData.InputButton.Left)
+                PointerUp?.Invoke(eventData);
+        }
 
-    // Checks whether this object is active and can process input.
-    private bool CanProcess(PointerEventData eventData)
-    {
-        return isActiveAndEnabled && interactable && eventData != null;
-    }
+        // Sends events when the pointer enters or leaves this object.
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (CanProcess(eventData))
+                PointerEntered?.Invoke(eventData);
+        }
 
-    private void OnDisable()
-    {
-        PointerUp = null;
-        PointerDown = null;
-        PointerEntered = null;
-        PointerExited = null;
-        Clicked = null;
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            if (CanProcess(eventData))
+                PointerExited?.Invoke(eventData);
+        }
+
+        // Checks that this object can receive the current pointer event.
+        private bool CanProcess(PointerEventData eventData)
+        {
+            return isActiveAndEnabled && interactable && eventData != null;
+        }
+
+        private void OnDisable()
+        {
+            PointerUp = null;
+            PointerDown = null;
+            PointerEntered = null;
+            PointerExited = null;
+            Clicked = null;
+        }
     }
 }

@@ -7,6 +7,7 @@ using UnityEngine.UI;
 
 namespace SlotMachine.UI
 {
+    // Builds the bet menu and keeps it inside the visible screen area.
     public sealed class BettingPopupController : MonoBehaviour
     {
         private sealed class OptionBinding
@@ -39,6 +40,7 @@ namespace SlotMachine.UI
         private AudioClip hoverSound;
         private AudioClip clickSound;
 
+        // Finds popup parts that were not assigned in the Inspector.
         private void Awake()
         {
             if (popupRoot == null)
@@ -51,6 +53,7 @@ namespace SlotMachine.UI
                 popupGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
+        // Builds the options and opens the popup beside the click.
         public void Open(
             Vector2 screenPosition,
             RectTransform parentCanvas,
@@ -91,6 +94,7 @@ namespace SlotMachine.UI
             PlayOpenAnimation(finalScale);
         }
 
+        // Hides the menu and removes its pointer event links.
         public void Close()
         {
             selectionCallback = null;
@@ -100,6 +104,7 @@ namespace SlotMachine.UI
             gameObject.SetActive(false);
         }
 
+        // Creates one clickable option for each bet amount.
         private void BuildOptions(IReadOnlyList<int> bets, GameObject betOptionPrefab)
         {
             UnsubscribeOptions();
@@ -149,6 +154,7 @@ namespace SlotMachine.UI
             }
         }
 
+        // Places and scales the popup so it fits inside the screen area.
         private float PositionAt(Vector2 screenPosition, RectTransform parent)
         {
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
@@ -198,6 +204,7 @@ namespace SlotMachine.UI
             return scale;
         }
 
+        // Changes screen safe-area edges into canvas positions.
         private Rect GetSafeBounds(RectTransform parent)
         {
             Rect safeArea = Screen.safeArea;
@@ -222,6 +229,7 @@ namespace SlotMachine.UI
                 Mathf.Min(parent.rect.yMax, topRight.y));
         }
 
+        // Starts the popup fade and scale animation.
         private void PlayOpenAnimation(float finalScale)
         {
             popupGroup.alpha = 0f;
@@ -230,6 +238,7 @@ namespace SlotMachine.UI
             StartCoroutine(AnimateOpen(finalScale));
         }
 
+        // Fades in the popup while it grows to its final size.
         private System.Collections.IEnumerator AnimateOpen(float finalScale)
         {
             const float duration = 0.18f;
@@ -251,6 +260,7 @@ namespace SlotMachine.UI
             popupRoot.localScale = Vector3.one * finalScale;
         }
 
+        // Plays the click sound and asks the game manager to place the bet.
         private void SelectBet(OptionBinding binding)
         {
             if (selectionCallback == null || selectionInProgress)
@@ -270,6 +280,7 @@ namespace SlotMachine.UI
                 StartCoroutine(ShowRejectedSelection(binding));
         }
 
+        // Keeps the menu open briefly so the accepted bet message can be read.
         private IEnumerator CloseAfterSelection(OptionBinding binding)
         {
             yield return new WaitForSecondsRealtime(0.24f);
@@ -277,6 +288,7 @@ namespace SlotMachine.UI
                 Close();
         }
 
+        // Shows a short red effect if the bet was not accepted.
         private IEnumerator ShowRejectedSelection(OptionBinding binding)
         {
             if (binding.Graphic != null)
@@ -288,6 +300,7 @@ namespace SlotMachine.UI
                 SetOptionHovered(binding, binding.IsHovered);
         }
 
+        // Makes the option slightly larger while the pointer is over it.
         private void SetOptionHovered(OptionBinding binding, bool hovered)
         {
             binding.IsHovered = hovered;
@@ -301,6 +314,7 @@ namespace SlotMachine.UI
                     : binding.OriginalColor;
         }
 
+        // Changes the option look while it is being pressed.
         private void SetOptionPressed(OptionBinding binding, bool pressed)
         {
             if (binding.RectTransform == null)
@@ -316,6 +330,7 @@ namespace SlotMachine.UI
                         : binding.OriginalColor;
         }
 
+        // Removes event links before the option objects are replaced.
         private void UnsubscribeOptions()
         {
             foreach (OptionBinding binding in optionBindings)

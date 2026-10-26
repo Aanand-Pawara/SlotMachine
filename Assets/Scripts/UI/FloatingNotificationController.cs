@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 namespace SlotMachine.UI
 {
+    // Shows a short message near the place where the player clicked.
     public sealed class FloatingNotificationController : MonoBehaviour
     {
         [SerializeField] private TMP_Text messageText;
@@ -30,6 +31,7 @@ namespace SlotMachine.UI
                 canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
+        // Sets up the message and starts its movement and fade animation.
         public void Show(
             string message,
             Color color,
@@ -65,6 +67,7 @@ namespace SlotMachine.UI
             StartCoroutine(Animate(duration, color));
         }
 
+        // Moves the message up, makes it larger, and fades it out.
         private IEnumerator Animate(float duration, Color color)
         {
             Vector2 startPosition = rectTransform.anchoredPosition;

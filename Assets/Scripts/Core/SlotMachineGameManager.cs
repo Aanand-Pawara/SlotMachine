@@ -9,6 +9,7 @@ using UnityEngine.EventSystems;
 
 namespace SlotMachine.Core
 {
+    // Handles bets, the wallet, messages, and sounds for the slot machine.
     [DisallowMultipleComponent]
     public sealed class SlotMachineGameManager : MonoBehaviour
     {
@@ -30,6 +31,7 @@ namespace SlotMachine.Core
         private Vector3 walletTextScale;
         private Color walletTextColor;
 
+        // Checks the scene references and prepares the wallet, input, and audio.
         private void Awake()
         {
             if (game == null || game.Config == null || presentation == null || walletText == null)
@@ -70,6 +72,7 @@ namespace SlotMachine.Core
             RefreshWallet();
         }
 
+        // Connects to the spin events and starts music when one is assigned.
         private void OnEnable()
         {
             if (screenInput != null)
@@ -87,6 +90,7 @@ namespace SlotMachine.Core
             game.ResultsGenerated += HandleResultsGenerated;
         }
 
+        // Removes event links and stops music when this object is turned off.
         private void OnDisable()
         {
             if (game != null)
@@ -118,6 +122,7 @@ namespace SlotMachine.Core
             }
         }
 
+        // Adds a clear area over the canvas to receive clicks.
         private void CreateScreenInput()
         {
             GameObject inputObject = new("SlotMachineScreenInput");
@@ -138,6 +143,7 @@ namespace SlotMachine.Core
             inputRect.SetAsLastSibling();
         }
 
+        // Opens the bet menu where the player clicked.
         private void HandleScreenClick(PointerEventData eventData)
         {
             if (eventData == null || game == null || game.IsSpinning)
@@ -146,6 +152,7 @@ namespace SlotMachine.Core
             OpenBetPopup(eventData.position);
         }
 
+        // Creates the bet menu the first time, then opens it.
         private void OpenBetPopup(Vector2 screenPosition)
         {
             lastClickPosition = screenPosition;
@@ -176,6 +183,7 @@ namespace SlotMachine.Core
             PlaySound(presentation.PopupOpen);
         }
 
+        // Checks the bet, starts the spin, and takes the bet from the wallet.
         private bool PlaceBet(int amount)
         {
             if (!betOptions.Contains(amount))
@@ -205,16 +213,19 @@ namespace SlotMachine.Core
             return true;
         }
 
+        // Plays the reel sound when a spin begins.
         private void HandleSpinStarted()
         {
             PlaySound(presentation.ReelSpin);
         }
 
+        // Saves the results so they can be checked when the reels stop.
         private void HandleResultsGenerated(IReadOnlyList<SlotMachineConfig.SymbolDefinition> results)
         {
             spinResults = results;
         }
 
+        // Gives a payout or shows a loss message after the spin.
         private void HandleSpinCompleted()
         {
             int payout = CalculatePayout(spinResults, currentBet);
@@ -232,6 +243,7 @@ namespace SlotMachine.Core
             PlaySound(payout >= (long)currentBet * 5 ? presentation.Jackpot : presentation.Win);
         }
 
+        // Pays only when every reel has the same symbol.
         private int CalculatePayout(
             IReadOnlyList<SlotMachineConfig.SymbolDefinition> results,
             int bet)
@@ -256,6 +268,7 @@ namespace SlotMachine.Core
             return (int)Math.Min(payout, int.MaxValue);
         }
 
+        // Builds the available bet amounts from the config settings.
         private void BuildBetOptions()
         {
             SlotMachineConfig.BettingSettings settings = game.Config.Betting;
@@ -271,11 +284,13 @@ namespace SlotMachine.Core
                 betOptions.Add(maximum);
         }
 
+        // Updates the wallet text after money changes.
         private void RefreshWallet()
         {
             walletText.text = $"{presentation.CurrencySymbol}{balance}";
         }
 
+        // Starts the wallet animation for a win or a spent bet.
         private void AnimateWallet(bool won)
         {
             if (walletAnimation != null)
@@ -284,6 +299,7 @@ namespace SlotMachine.Core
             walletAnimation = StartCoroutine(AnimateWalletRoutine(won));
         }
 
+        // Briefly changes the wallet size and color.
         private IEnumerator AnimateWalletRoutine(bool won)
         {
             const float duration = 0.24f;
@@ -306,6 +322,7 @@ namespace SlotMachine.Core
             walletAnimation = null;
         }
 
+        // Creates a short message near the last click.
         private void ShowNotification(string message, Color color, Vector2 screenPosition)
         {
             if (presentation.NotificationPrefab == null)
@@ -322,12 +339,14 @@ namespace SlotMachine.Core
                 presentation.NotificationDuration);
         }
 
+        // Plays a sound only when a clip is assigned.
         private void PlaySound(AudioClip clip)
         {
             if (clip != null)
                 audioSource.PlayOneShot(clip);
         }
 
+        // Gets the camera used by the UI canvas, if needed.
         private Camera GetUICamera()
         {
             return uiCanvas.renderMode == RenderMode.ScreenSpaceOverlay
