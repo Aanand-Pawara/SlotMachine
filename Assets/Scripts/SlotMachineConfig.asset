@@ -18,6 +18,11 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 2074e5bc8378a9a43aea726b251e86e8, type: 3}
     weight: 5
     payoutMultiplier: 10
+  - id: 5
+    displayName: Dice
+    sprite: {fileID: 21300000, guid: 5f457d5ead875fe4b9c62e8662055044, type: 3}
+    weight: 35
+    payoutMultiplier: 2
   - id: 2
     displayName: Bell
     sprite: {fileID: 21300000, guid: 9490bf27783a6d74a99ac2e79a0db9d0, type: 3}

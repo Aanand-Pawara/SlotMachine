@@ -6,16 +6,18 @@ This is a slot machine game made with Unity. The player clicks on the screen to 
 
 The game uses Unity UI and TextMesh Pro. It does not use Unity Button components for the bet menu. `UIPointerHandler` reads the clicks instead.
 
+![Slot Machine Gameplay](gameplay.gif)
+
 ## Project expectations
 
-| Expectation | Current game |
-| --- | --- |
-| Winning logic | All assigned reels must stop on the same symbol. The game needs at least two reels. |
-| Smooth reels | Reels speed up, spin, slow down, and stop one after another. |
-| Clear symbols | Each reel uses the same symbol size and keeps its symbols inside the reel view. The final result is shown in the center row. |
+| Expectation     | Current game                                                                                                                     |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Winning logic   | All assigned reels must stop on the same symbol. The game needs at least two reels.                                              |
+| Smooth reels    | Reels speed up, spin, slow down, and stop one after another.                                                                     |
+| Clear symbols   | Each reel uses the same symbol size and keeps its symbols inside the reel view. The final result is shown in the center row.     |
 | Random outcomes | The game uses Unity's `Random` value and each symbol's weight to choose results. A bigger weight gives a symbol a bigger chance. |
-| Payouts | A matching result pays the bet multiplied by that symbol's payout multiplier. |
-| Bonus features | There are no special bonus rounds yet. A symbol can be added in the config, but its special behavior needs new game code. |
+| Payouts         | A matching result pays the bet multiplied by that symbol's payout multiplier.                                                    |
+| Bonus features  | There are no special bonus rounds yet. A symbol can be added in the config, but its special behavior needs new game code.        |
 
 This RNG is suitable for a local game. It is not a secure or audited system for real-money gambling.
 
@@ -50,18 +52,18 @@ The C# scripts are in `Assets/Scripts` and use two namespaces:
 
 The files are also grouped into `Core` and `UI` folders. A script's Unity GUID is kept in its `.meta` file. Do not delete or replace that file when moving a script, or Unity may lose links to the script in scenes and assets.
 
-| Script | What it does |
-| --- | --- |
-| `Core/SlotMachineGameManager.cs` | Opens the bet menu, checks bets, updates the wallet, shows win or loss messages, and plays sounds. |
-| `Core/Lever.cs` | Shows the lever animation when a spin starts. The lever itself is not clicked. |
-| `Core/SlotGameController.cs` | Chooses one result for each assigned reel and manages the spin start and finish. |
-| `UI/SlotReel.cs` | Builds the symbols for one reel, moves them, and shows that reel's final result. |
-| `Core/SlotMachineConfig.cs` | Stores the symbols, reel movement settings, and wallet and bet settings. |
-| `UI/SlotMachinePresentationConfig.cs` | Stores the UI prefabs, sounds, music, colors, and message time. |
-| `UI/BettingPopupController.cs` | Builds the bet choices, reacts to pointer actions, and keeps the popup inside the screen. |
-| `UI/FloatingNotificationController.cs` | Shows and animates short messages such as a win or a low wallet balance. |
-| `UI/ScreenSpaceUIUtility.cs` | Fits UI inside the safe screen area and keeps it there when it moves. |
-| `UI/UIPointerHandler.cs` | Sends pointer events to scripts that need to react to clicks, presses, or hover. |
+| Script                                 | What it does                                                                                       |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `Core/SlotMachineGameManager.cs`       | Opens the bet menu, checks bets, updates the wallet, shows win or loss messages, and plays sounds. |
+| `Core/Lever.cs`                        | Shows the lever animation when a spin starts. The lever itself is not clicked.                     |
+| `Core/SlotGameController.cs`           | Chooses one result for each assigned reel and manages the spin start and finish.                   |
+| `UI/SlotReel.cs`                       | Builds the symbols for one reel, moves them, and shows that reel's final result.                   |
+| `Core/SlotMachineConfig.cs`            | Stores the symbols, reel movement settings, and wallet and bet settings.                           |
+| `UI/SlotMachinePresentationConfig.cs`  | Stores the UI prefabs, sounds, music, colors, and message time.                                    |
+| `UI/BettingPopupController.cs`         | Builds the bet choices, reacts to pointer actions, and keeps the popup inside the screen.          |
+| `UI/FloatingNotificationController.cs` | Shows and animates short messages such as a win or a low wallet balance.                           |
+| `UI/ScreenSpaceUIUtility.cs`           | Fits UI inside the safe screen area and keeps it there when it moves.                              |
+| `UI/UIPointerHandler.cs`               | Sends pointer events to scripts that need to react to clicks, presses, or hover.                   |
 
 Gameplay scripts use the `SlotMachine.Core` namespace and are in the `Core` folder. Reel and screen scripts use the `SlotMachine.UI` namespace and are in the `UI` folder. The two config assets keep gameplay rules separate from UI assets.
 
