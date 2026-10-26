@@ -60,6 +60,7 @@ The files are also grouped into `Core` and `UI` folders. A script's Unity GUID i
 | `UI/SlotMachinePresentationConfig.cs` | Stores the UI prefabs, sounds, music, colors, and message time. |
 | `UI/BettingPopupController.cs` | Builds the bet choices, reacts to pointer actions, and keeps the popup inside the screen. |
 | `UI/FloatingNotificationController.cs` | Shows and animates short messages such as a win or a low wallet balance. |
+| `UI/ScreenSpaceUIUtility.cs` | Fits UI inside the safe screen area and keeps it there when it moves. |
 | `UI/UIPointerHandler.cs` | Sends pointer events to scripts that need to react to clicks, presses, or hover. |
 
 Gameplay scripts use the `SlotMachine.Core` namespace and are in the `Core` folder. Reel and screen scripts use the `SlotMachine.UI` namespace and are in the `UI` folder. The two config assets keep gameplay rules separate from UI assets.

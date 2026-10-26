@@ -60,35 +60,6 @@ namespace SlotMachine.UI
             rectTransform.pivot = new Vector2(0.5f, 0.5f);
             rectTransform.localScale = Vector3.one;
             rectTransform.anchoredPosition = Vector2.zero;
-            Canvas.ForceUpdateCanvases();
-
-            Rect safeBounds = GetSafeBounds(canvasRect, uiCamera);
-            float safeMargin = Mathf.Min(8f, Mathf.Min(safeBounds.width, safeBounds.height) * 0.25f);
-            safeBounds = Rect.MinMaxRect(
-                safeBounds.xMin + safeMargin,
-                safeBounds.yMin + safeMargin,
-                safeBounds.xMax - safeMargin,
-                safeBounds.yMax - safeMargin);
-
-            Rect notificationBounds = GetVisibleBounds(canvasRect);
-            if (notificationBounds.width <= 0f || notificationBounds.height <= 0f)
-            {
-                Debug.LogError("Notification prefab must have a non-zero visible size.", this);
-                Destroy(gameObject);
-                return;
-            }
-
-            float maxScale = Mathf.Min(
-                1f,
-                Mathf.Min(safeBounds.width / notificationBounds.width, safeBounds.height / notificationBounds.height));
-            Vector2 rootPositionAtZero = canvasRect.InverseTransformPoint(
-                rectTransform.TransformPoint(Vector3.zero));
-            Vector2 minFromRoot = new(
-                notificationBounds.xMin - rootPositionAtZero.x,
-                notificationBounds.yMin - rootPositionAtZero.y);
-            Vector2 maxFromRoot = new(
-                notificationBounds.xMax - rootPositionAtZero.x,
-                notificationBounds.yMax - rootPositionAtZero.y);
 
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
                     canvasRect, screenPosition, uiCamera, out Vector2 localPosition))
@@ -96,24 +67,32 @@ namespace SlotMachine.UI
                 localPosition = Vector2.zero;
             }
 
-            Vector2 startPosition = ClampPosition(
-                localPosition + new Vector2(0f, 40f),
-                rootPositionAtZero,
-                minFromRoot,
-                maxFromRoot,
-                maxScale,
-                safeBounds);
-            Vector2 endPosition = ClampPosition(
-                startPosition + new Vector2(0f, 45f),
-                rootPositionAtZero,
-                minFromRoot,
-                maxFromRoot,
-                maxScale,
-                safeBounds);
-            rectTransform.anchoredPosition = startPosition;
+            Vector2 startPosition = localPosition + new Vector2(0f, 40f);
+            if (!ScreenSpaceUIUtility.FitAndClamp(
+                    rectTransform, canvasRect, uiCamera, startPosition, out float maxScale))
+            {
+                Debug.LogError("Notification must have a non-zero visible size and be a child of its canvas.", this);
+                Destroy(gameObject);
+                return;
+            }
+
+            Vector2 startAnchoredPosition = rectTransform.anchoredPosition;
+            Vector2 startCanvasPosition = canvasRect.InverseTransformPoint(
+                rectTransform.TransformPoint(Vector3.zero));
+            Vector2 endCanvasPosition = startCanvasPosition + new Vector2(0f, 45f);
+            if (!ScreenSpaceUIUtility.ClampToSafeArea(
+                    rectTransform, canvasRect, uiCamera, endCanvasPosition, maxScale))
+            {
+                Debug.LogError("Could not place notification inside its canvas.", this);
+                Destroy(gameObject);
+                return;
+            }
+            Vector2 endAnchoredPosition = rectTransform.anchoredPosition;
+            rectTransform.anchoredPosition = startAnchoredPosition;
             rectTransform.localScale = Vector3.one * (maxScale * 0.75f);
             canvasGroup.alpha = 0f;
-            StartCoroutine(Animate(duration, color, startPosition, endPosition, maxScale));
+            StartCoroutine(Animate(
+                duration, color, startAnchoredPosition, endAnchoredPosition, maxScale));
         }
 
         // Moves the message up, makes it larger, and fades it out.
@@ -139,90 +118,6 @@ namespace SlotMachine.UI
             }
 
             Destroy(gameObject);
-        }
-
-        private Rect GetSafeBounds(RectTransform canvasRect, Camera uiCamera)
-        {
-            Rect safeArea = Screen.safeArea;
-            if (safeArea.width <= 0f || safeArea.height <= 0f)
-                return canvasRect.rect;
-
-            Vector2[] screenCorners =
-            {
-                new(safeArea.xMin, safeArea.yMin),
-                new(safeArea.xMin, safeArea.yMax),
-                new(safeArea.xMax, safeArea.yMin),
-                new(safeArea.xMax, safeArea.yMax)
-            };
-            Vector2 min = new(float.PositiveInfinity, float.PositiveInfinity);
-            Vector2 max = new(float.NegativeInfinity, float.NegativeInfinity);
-
-            foreach (Vector2 screenCorner in screenCorners)
-            {
-                if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                        canvasRect, screenCorner, uiCamera, out Vector2 localCorner))
-                {
-                    return canvasRect.rect;
-                }
-
-                min = Vector2.Min(min, localCorner);
-                max = Vector2.Max(max, localCorner);
-            }
-
-            Rect safeBounds = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
-            float xMin = Mathf.Max(safeBounds.xMin, canvasRect.rect.xMin);
-            float yMin = Mathf.Max(safeBounds.yMin, canvasRect.rect.yMin);
-            float xMax = Mathf.Min(safeBounds.xMax, canvasRect.rect.xMax);
-            float yMax = Mathf.Min(safeBounds.yMax, canvasRect.rect.yMax);
-            if (xMax <= xMin || yMax <= yMin)
-                return canvasRect.rect;
-
-            return Rect.MinMaxRect(xMin, yMin, xMax, yMax);
-        }
-
-        private Rect GetVisibleBounds(RectTransform canvasRect)
-        {
-            RectTransform[] rects = GetComponentsInChildren<RectTransform>(true);
-            Vector2 min = new(float.PositiveInfinity, float.PositiveInfinity);
-            Vector2 max = new(float.NegativeInfinity, float.NegativeInfinity);
-            Vector3[] corners = new Vector3[4];
-
-            foreach (RectTransform rect in rects)
-            {
-                if (!rect.gameObject.activeInHierarchy)
-                    continue;
-
-                rect.GetWorldCorners(corners);
-                foreach (Vector3 corner in corners)
-                {
-                    Vector3 localCorner = canvasRect.InverseTransformPoint(corner);
-                    min = Vector2.Min(min, localCorner);
-                    max = Vector2.Max(max, localCorner);
-                }
-            }
-
-            if (float.IsInfinity(min.x) || float.IsInfinity(min.y))
-                return new Rect();
-
-            return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
-        }
-
-        private static Vector2 ClampPosition(
-            Vector2 desiredPosition,
-            Vector2 rootPositionAtZero,
-            Vector2 minFromRoot,
-            Vector2 maxFromRoot,
-            float scale,
-            Rect bounds)
-        {
-            float minX = bounds.xMin - rootPositionAtZero.x - minFromRoot.x * scale;
-            float maxX = bounds.xMax - rootPositionAtZero.x - maxFromRoot.x * scale;
-            float minY = bounds.yMin - rootPositionAtZero.y - minFromRoot.y * scale;
-            float maxY = bounds.yMax - rootPositionAtZero.y - maxFromRoot.y * scale;
-
-            return new Vector2(
-                Mathf.Clamp(desiredPosition.x, minX, Mathf.Max(minX, maxX)),
-                Mathf.Clamp(desiredPosition.y, minY, Mathf.Max(minY, maxY)));
         }
     }
 }
