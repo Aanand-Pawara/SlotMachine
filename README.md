@@ -6,7 +6,7 @@ This is a slot machine game made with Unity. The player clicks on the screen to 
 
 The game uses Unity UI and TextMesh Pro. It does not use Unity Button components for the bet menu. `UIPointerHandler` reads the clicks instead.
 
-![Slot Machine Gameplay](gameplay.gif)
+![Slot Machine Gameplay](Gameplay.gif)
 
 ## Project expectations
 
