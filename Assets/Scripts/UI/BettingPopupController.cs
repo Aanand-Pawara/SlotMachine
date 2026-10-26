@@ -164,15 +164,6 @@ namespace SlotMachine.UI
             }
 
             Rect bounds = GetSafeBounds(parent);
-            if (bounds.width <= 0f || bounds.height <= 0f)
-                bounds = parent.rect;
-
-            Vector2 popupSize = popupRoot.rect.size;
-            if (popupSize.x <= 0f || popupSize.y <= 0f)
-            {
-                Debug.LogError("Bet popup must have a non-zero size.", this);
-                return 1f;
-            }
 
             float safeMargin = Mathf.Min(8f, Mathf.Min(bounds.width, bounds.height) * 0.25f);
             bounds = Rect.MinMaxRect(
@@ -180,28 +171,71 @@ namespace SlotMachine.UI
                 bounds.yMin + safeMargin,
                 bounds.xMax - safeMargin,
                 bounds.yMax - safeMargin);
-            if (bounds.width <= 0f || bounds.height <= 0f)
-                bounds = parent.rect;
 
-            float scale = Mathf.Min(
-                1f,
-                Mathf.Min(bounds.width / popupSize.x, bounds.height / popupSize.y));
-            scale = Mathf.Max(0.001f, scale);
             popupRoot.anchorMin = new Vector2(0.5f, 0.5f);
             popupRoot.anchorMax = new Vector2(0.5f, 0.5f);
             popupRoot.pivot = new Vector2(0.5f, 0.5f);
-            popupRoot.sizeDelta = popupSize;
+            popupRoot.localScale = Vector3.one;
+            popupRoot.anchoredPosition = Vector2.zero;
+
+            Rect popupBounds = GetPopupBounds(parent);
+            if (popupBounds.width <= 0f || popupBounds.height <= 0f)
+            {
+                Debug.LogError("Bet popup must have a non-zero visible size.", this);
+                return 1f;
+            }
+
+            Vector2 pivotAtZero = parent.InverseTransformPoint(
+                popupRoot.TransformPoint(Vector3.zero));
+            Vector2 popupMinFromPivot = new(
+                popupBounds.xMin - pivotAtZero.x,
+                popupBounds.yMin - pivotAtZero.y);
+            Vector2 popupMaxFromPivot = new(
+                popupBounds.xMax - pivotAtZero.x,
+                popupBounds.yMax - pivotAtZero.y);
+            float scale = Mathf.Min(
+                1f,
+                Mathf.Min(bounds.width / popupBounds.width, bounds.height / popupBounds.height));
+            scale = Mathf.Max(0.001f, scale);
             popupRoot.localScale = Vector3.one * scale;
 
-            Vector2 halfSize = popupSize * (scale * 0.5f);
-            float minX = bounds.xMin + halfSize.x;
-            float maxX = bounds.xMax - halfSize.x;
-            float minY = bounds.yMin + halfSize.y;
-            float maxY = bounds.yMax - halfSize.y;
-            localPosition.x = Mathf.Clamp(localPosition.x, minX, Mathf.Max(minX, maxX));
-            localPosition.y = Mathf.Clamp(localPosition.y, minY, Mathf.Max(minY, maxY));
-            popupRoot.anchoredPosition = localPosition;
+            Vector2 desiredAnchoredPosition = localPosition - pivotAtZero;
+            float minX = bounds.xMin - pivotAtZero.x - popupMinFromPivot.x * scale;
+            float maxX = bounds.xMax - pivotAtZero.x - popupMaxFromPivot.x * scale;
+            float minY = bounds.yMin - pivotAtZero.y - popupMinFromPivot.y * scale;
+            float maxY = bounds.yMax - pivotAtZero.y - popupMaxFromPivot.y * scale;
+            popupRoot.anchoredPosition = new Vector2(
+                Mathf.Clamp(desiredAnchoredPosition.x, minX, Mathf.Max(minX, maxX)),
+                Mathf.Clamp(desiredAnchoredPosition.y, minY, Mathf.Max(minY, maxY)));
             return scale;
+        }
+
+        // Measures the popup background and all of its visible child UI.
+        private Rect GetPopupBounds(RectTransform parent)
+        {
+            RectTransform[] rects = popupRoot.GetComponentsInChildren<RectTransform>(true);
+            Vector2 min = new(float.PositiveInfinity, float.PositiveInfinity);
+            Vector2 max = new(float.NegativeInfinity, float.NegativeInfinity);
+            Vector3[] corners = new Vector3[4];
+
+            foreach (RectTransform rect in rects)
+            {
+                if (!rect.gameObject.activeInHierarchy)
+                    continue;
+
+                rect.GetWorldCorners(corners);
+                foreach (Vector3 corner in corners)
+                {
+                    Vector3 localCorner = parent.InverseTransformPoint(corner);
+                    min = Vector2.Min(min, localCorner);
+                    max = Vector2.Max(max, localCorner);
+                }
+            }
+
+            if (float.IsInfinity(min.x) || float.IsInfinity(min.y))
+                return new Rect();
+
+            return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
         }
 
         // Changes screen safe-area edges into canvas positions.
@@ -211,22 +245,35 @@ namespace SlotMachine.UI
             if (safeArea.width <= 0f || safeArea.height <= 0f)
                 return parent.rect;
 
-            Vector2 bottomLeftScreen = new(safeArea.xMin, safeArea.yMin);
-            Vector2 topRightScreen = new(safeArea.xMax, safeArea.yMax);
-
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    parent, bottomLeftScreen, uiCamera, out Vector2 bottomLeft) ||
-                !RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    parent, topRightScreen, uiCamera, out Vector2 topRight))
+            Vector2[] screenCorners =
             {
-                return parent.rect;
+                new(safeArea.xMin, safeArea.yMin),
+                new(safeArea.xMin, safeArea.yMax),
+                new(safeArea.xMax, safeArea.yMin),
+                new(safeArea.xMax, safeArea.yMax)
+            };
+            Vector2 min = new(float.PositiveInfinity, float.PositiveInfinity);
+            Vector2 max = new(float.NegativeInfinity, float.NegativeInfinity);
+
+            foreach (Vector2 screenCorner in screenCorners)
+            {
+                if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                        parent, screenCorner, uiCamera, out Vector2 localCorner))
+                {
+                    return parent.rect;
+                }
+
+                min = Vector2.Min(min, localCorner);
+                max = Vector2.Max(max, localCorner);
             }
 
-            return Rect.MinMaxRect(
-                Mathf.Max(parent.rect.xMin, bottomLeft.x),
-                Mathf.Max(parent.rect.yMin, bottomLeft.y),
-                Mathf.Min(parent.rect.xMax, topRight.x),
-                Mathf.Min(parent.rect.yMax, topRight.y));
+            Rect bounds = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+            bounds = Rect.MinMaxRect(
+                Mathf.Max(parent.rect.xMin, bounds.xMin),
+                Mathf.Max(parent.rect.yMin, bounds.yMin),
+                Mathf.Min(parent.rect.xMax, bounds.xMax),
+                Mathf.Min(parent.rect.yMax, bounds.yMax));
+            return bounds.width > 0f && bounds.height > 0f ? bounds : parent.rect;
         }
 
         // Starts the popup fade and scale animation.
